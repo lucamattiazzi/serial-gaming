@@ -14,7 +14,7 @@ class PicoSerial {
   async connect() {
     try {
       if (!('serial' in navigator)) {
-        this.logMessage('WebSerial API not supported in this browser, use chrome or edgey')
+        this.logMessage('WebSerial API not supported in this browser, use chrome or edgey', "error")
         return
       }
 
@@ -28,14 +28,14 @@ class PicoSerial {
         flowControl: 'none'
       })
 
-      this.logMessage('Connected to Raspberry Pi Pico')
+      this.logMessage('Connected to Raspberry Pi Pico', "info")
       this.updateConnectionStatus(true)
 
       this.reader = this.port.readable.getReader()
       this.writer = this.port.writable.getWriter()
       this.readFromPort()
     } catch (error) {
-      this.logMessage(`Connection failed: ${error.message}`)
+      this.logMessage(`Connection failed: ${error.message}`, "error")
     } finally {
       window.addEventListener('beforeunload', () => {
         if (this.isConnected) {
@@ -54,11 +54,11 @@ class PicoSerial {
       if (this.writer) await this.writer.releaseLock()
       if (this.port) await this.port.close()
 
-      this.logMessage('Disconnected from Raspberry Pi Pico')
+      this.logMessage('Disconnected from Raspberry Pi Pico', "info")
       this.updateConnectionStatus(false)
 
     } catch (error) {
-      this.logMessage(`Disconnection error: ${error.message}`)
+      this.logMessage(`Disconnection error: ${error.message}`, "error")
     }
   }
 
@@ -79,19 +79,19 @@ class PicoSerial {
 
         lines.forEach(line => {
           if (line.trim()) {
-            this.logMessage(`Pico: ${line.trim()}`)
+            this.logMessage(`Pico: ${line.trim()}`, "info")
             this.messageHandler(line)
           }
         })
       }
     } catch (error) {
-      this.logMessage(`Read error: ${error.message}`)
+      this.logMessage(`Read error: ${error.message}`, "error")
     }
   }
 
   async sendMessage(message) {
     if (!this.isConnected || !this.writer) {
-      this.logMessage('Not connected to Pico')
+      this.logMessage('Not connected to Pico', "error")
       return
     }
 
@@ -100,9 +100,9 @@ class PicoSerial {
       const data = encoder.encode(message + '\n')
       await this.writer.write(data)
 
-      this.logMessage(`Sent: ${message}`)
+      this.logMessage(`Sent: ${message}`, "info")
     } catch (error) {
-      this.logMessage(`Send error: ${error.message}`)
+      this.logMessage(`Send error: ${error.message}`, "error")
     }
   }
 
@@ -115,8 +115,8 @@ class PicoSerial {
     this.isConnected = connected
   }
 
-  logMessage(message) {
+  logMessage(message, level = "log") {
     const timestamp = new Date().toLocaleTimeString()
-    console.log(`[${timestamp}] ${message}\n`)
+    console[level](`[${timestamp}] ${message}\n`)
   }
 }

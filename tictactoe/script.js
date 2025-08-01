@@ -19,19 +19,16 @@ connectButton.addEventListener('click', async () => {
 })
 
 async function listenForAIData(text) {
-  const jsonResponse = JSON.parse(text)
-  if (jsonResponse.move !== undefined) {
+  try {
+    const jsonResponse = JSON.parse(text)
+    if (jsonResponse.move == null) return
     handleAIMove(jsonResponse.move)
+  } catch (error) {
+    picoSerial.logMessage(text, "debug")
   }
 }
 
-
-async function sendStateToAI(lastMoveIndex) {
-  const gameState = {
-    board: board,
-    lastMove: lastMoveIndex
-  }
-
+async function sendStateToAI(gameState) {
   const jsonString = JSON.stringify(gameState) + '\n'
   await picoSerial.sendMessage(jsonString)
   statusDisplay.textContent = "AI is thinking..."
@@ -69,7 +66,12 @@ function handleCellClick(event) {
 
   if (isGameActive) {
     currentPlayer = aiPlayer
-    sendStateToAI(clickedCellIndex)
+    const gameState = {
+      board: board,
+      lastMove: clickedCellIndex,
+      winner: null
+    }
+    sendStateToAI(gameState)
   }
 }
 
@@ -96,6 +98,12 @@ function makeMove(index, player) {
   const winner = checkWinner()
   if (winner) {
     isGameActive = false
+    const gameState = {
+      board: null,
+      lastMove: null,
+      winner: winner
+    }
+    sendStateToAI(gameState)
     if (winner === 'TIE') {
       statusDisplay.textContent = "It's a tie!"
     } else {
