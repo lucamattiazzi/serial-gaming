@@ -72,6 +72,7 @@ function shortPythonError(error) {
 class EmulatedPico {
   constructor(label, code, timeLimitMs) {
     this.label = label
+    this.verbose = true // a false tace i log informativi (utile nei giochi a tick)
     this.code = code
     this.timeLimitMs = timeLimitMs
     this.runner = null
@@ -136,6 +137,7 @@ class EmulatedPico {
   }
 
   logMessage(message, level = 'log') {
+    if (!this.verbose && level !== 'error') return
     const timestamp = new Date().toLocaleTimeString()
     console[level](`[${timestamp}] [${this.label}] ${message}`)
   }

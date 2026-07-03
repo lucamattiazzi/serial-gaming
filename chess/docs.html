@@ -25,6 +25,17 @@
     convalida ogni mossa con le regole complete degli scacchi (arrocco, en passant, promozione,
     scacco, patte).</p>
 
+  <h2>La busta comune</h2>
+  <p>Ogni messaggio che ricevi contiene anche due campi di busta, omessi negli esempi di
+    questa pagina per brevità: <code>game</code> (qui <code>"chess"</code>) e
+    <code>match</code>, un UUID che identifica la singola partita e resta identico dal primo
+    all'ultimo messaggio. All'inizio di ogni partita arriva inoltre un
+    <strong>annuncio</strong> con la sola busta e tutti i campi di gioco a <code>null</code>:
+    ignoralo, non rispondere. Grazie alla busta un solo <code>main.py</code> può giocare a
+    tutti i giochi, scegliendo il gestore in base a <code>state["game"]</code> — è ciò che
+    rende possibile la <a href="../torneo/">modalità torneo</a>.</p>
+  <pre><code>{"game": "chess", "match": "3f2b1c4e-…", …campi del gioco…}</code></pre>
+
   <h2>Messaggio in ingresso: il tuo turno</h2>
   <pre><code>{"fen": "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1", "lastMove": "e2e4", "winner": null}</code></pre>
   <table>
@@ -146,6 +157,8 @@ while True:
         continue
     if state.get("winner") is not None:
         continue  # partita finita
+    if state.get("fen") is None:
+        continue  # annuncio di inizio partita
     move = next_move(state["fen"], state["lastMove"])
     print(json.dumps({"move": move}))</code></pre>
 

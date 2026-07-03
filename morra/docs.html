@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="it">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>API della morra cinese — Serial Gaming</title>
+  <link rel="stylesheet" href="../style.css">
+</head>
+
+<body class="home">
+  <p><a href="./">&larr; Torna al gioco</a> · <a href="../">Home</a></p>
+
+  <header class="hero">
+    <h1>Morra cinese — <span class="accent">API del bot</span></h1>
+    <p>Il gioco più semplice da arbitrare e il più subdolo da giocare: vince chi legge
+      nei pattern dell'avversario.</p>
+  </header>
+
+  <h2>Come funziona</h2>
+  <p>Una partita dura <strong>20 round</strong>: vince chi ne porta a casa di più (i pareggi di
+    round non contano; la partita può finire pari). Le mosse sono <strong>simultanee</strong>:
+    a ogni round l'arbitro interroga entrambi i giocatori nello stesso momento, e nessuno vede
+    la scelta dell'altro prima di aver risposto. Trasporto solito: righe JSON su seriale USB
+    (115200 baud, 8N1).</p>
+
+  <h2>La busta comune</h2>
+  <p>Ogni messaggio che ricevi contiene anche due campi di busta, omessi negli esempi di
+    questa pagina per brevità: <code>game</code> (qui <code>"morra"</code>) e
+    <code>match</code>, un UUID che identifica la singola partita e resta identico dal primo
+    all'ultimo messaggio. All'inizio di ogni partita arriva inoltre un
+    <strong>annuncio</strong> con la sola busta e tutti i campi di gioco a <code>null</code>:
+    ignoralo, non rispondere. Grazie alla busta un solo <code>main.py</code> può giocare a
+    tutti i giochi, scegliendo il gestore in base a <code>state["game"]</code> — è ciò che
+    rende possibile la <a href="../torneo/">modalità torneo</a>.</p>
+  <pre><code>{"game": "morra", "match": "3f2b1c4e-…", …campi del gioco…}</code></pre>
+
+  <h2>Messaggio in ingresso: il round</h2>
+  <pre><code>{"round": 6, "rounds": 20,
+ "history": [{"you": "rock", "opp": "paper"}, {"you": "scissors", "opp": "paper"}, ...],
+ "score": {"you": 2, "opp": 3},
+ "winner": null}</code></pre>
+  <table>
+    <tr>
+      <th>Campo</th>
+      <th>Significato</th>
+    </tr>
+    <tr>
+      <td><code>round</code> / <code>rounds</code></td>
+      <td>Il round corrente (da 1) e quanti ne verranno giocati in totale.</td>
+    </tr>
+    <tr>
+      <td><code>history</code></td>
+      <td><strong>Tutta la storia della partita</strong>, dal tuo punto di vista: per ogni
+        round giocato, la tua mossa e quella avversaria. È qui che si vince: cerca i pattern
+        dell'avversario. Arriva completa a ogni round, così il tuo bot può restare senza
+        stato.</td>
+    </tr>
+    <tr>
+      <td><code>score</code></td>
+      <td>Round vinti finora, dal tuo punto di vista.</td>
+    </tr>
+    <tr>
+      <td><code>winner</code></td>
+      <td><code>null</code> durante la partita; <code>"you"</code>/<code>"opp"</code>/<code>"TIE"</code>
+        nella notifica finale (a cui non devi rispondere).</td>
+    </tr>
+  </table>
+
+  <h2>La tua risposta</h2>
+  <pre><code>{"move": "rock"}</code></pre>
+  <p>Una di <code>"rock"</code>, <code>"paper"</code>, <code>"scissors"</code>. Carta batte
+    sasso, forbici battono carta, sasso batte forbici. Le regole:</p>
+  <ul class="rules">
+    <li><strong>Tempo massimo: 1 secondo</strong> per round. Nessuna risposta = perdi tutta la
+      partita.</li>
+    <li><strong>Mossa non valida</strong> (token diverso dai tre) = sconfitta immediata.</li>
+    <li>Disconnessione = sconfitta.</li>
+  </ul>
+
+  <h2>Esempio completo</h2>
+  <pre><code>import sys
+import json
+import random
+
+HANDS = ["rock", "paper", "scissors"]
+BEATEN_BY = {"rock": "paper", "paper": "scissors", "scissors": "rock"}
+
+
+def next_move(history):
+    if len(history) < 3:
+        return random.choice(HANDS)
+    # contromossa alla mossa piu' frequente dell'avversario
+    opp_moves = [r["opp"] for r in history]
+    most_frequent = max(HANDS, key=opp_moves.count)
+    return BEATEN_BY[most_frequent]
+
+
+while True:
+    line = sys.stdin.readline()
+    try:
+        state = json.loads(line)
+    except ValueError:
+        continue
+    if state.get("winner") is not None:
+        continue  # partita finita
+    if state.get("round") is None:
+        continue  # annuncio di inizio partita
+    print(json.dumps({"move": next_move(state["history"])}))</code></pre>
+
+  <h2>Consigli</h2>
+  <ul class="rules">
+    <li>Il puro caso non perde mai in valore atteso, ma nemmeno vince: contro bot deterministici
+      serve <strong>riconoscere i pattern</strong> — frequenze, catene di Markov sulle ultime
+      mosse, reazioni al risultato del round precedente ("chi vince ripete, chi perde
+      cambia").</li>
+    <li>Occhio a essere prevedibile a tua volta: un pizzico di casualità ti protegge dai
+      counter-counter.</li>
+    <li>Nella sfida al meglio di 5 ogni partita riparte da capo, storia compresa.</li>
+    <li>Per l'emulatore: le solite note (CPython, riesecuzione a ogni messaggio — la storia
+      completa nel messaggio esiste apposta).</li>
+  </ul>
+</body>
+
+</html>

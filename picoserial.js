@@ -1,6 +1,21 @@
+// Solo porte USB nel selettore (niente Bluetooth): si filtrano i vendor
+// dei microcontrollori e dei bridge seriali più comuni.
+const USB_SERIAL_FILTERS = [
+  { usbVendorId: 0x2e8a }, // Raspberry Pi (Pico)
+  { usbVendorId: 0x303a }, // Espressif (ESP32-S2/S3 USB nativo)
+  { usbVendorId: 0x1a86 }, // WCH CH340/CH343
+  { usbVendorId: 0x10c4 }, // Silicon Labs CP210x
+  { usbVendorId: 0x0403 }, // FTDI
+  { usbVendorId: 0x239a }, // Adafruit
+  { usbVendorId: 0x2341 }, // Arduino
+  { usbVendorId: 0x1209 }, // pid.codes (schede varie)
+  { usbVendorId: 0x16c0 }, // Teensy / V-USB
+]
+
 class PicoSerial {
   constructor(label = 'Pico') {
     this.label = label
+    this.verbose = true // a false tace i log informativi (utile nei giochi a tick)
     this.port = null
     this.reader = null
     this.writer = null
@@ -24,7 +39,7 @@ class PicoSerial {
       throw new Error('WebSerial non supportato: usa Chrome o Edge')
     }
 
-    this.port = await navigator.serial.requestPort()
+    this.port = await navigator.serial.requestPort({ filters: USB_SERIAL_FILTERS })
 
     await this.port.open({
       baudRate: 115200,
@@ -111,6 +126,7 @@ class PicoSerial {
   }
 
   logMessage(message, level = 'log') {
+    if (!this.verbose && level !== 'error') return
     const timestamp = new Date().toLocaleTimeString()
     console[level](`[${timestamp}] [${this.label}] ${message}`)
   }
@@ -157,17 +173,66 @@ class PicoSerial {
     return new Promise(resolve => setTimeout(resolve, ms))
   }
 
+  // Rende visibili i caratteri di controllo per i messaggi diagnostici
+  _visible(text) {
+    return text
+      .replace(/\x01/g, '<Ctrl-A>')
+      .replace(/\x02/g, '<Ctrl-B>')
+      .replace(/\x03/g, '<Ctrl-C>')
+      .replace(/\x04/g, '<Ctrl-D>')
+      .replace(/\r/g, '')
+      .trim()
+  }
+
+  // Un estratto leggibile di ciò che il dispositivo ha inviato di recente
+  _bufferSnippet() {
+    const snippet = this._visible(this.rawBuffer).slice(-200)
+    return snippet || '(nessuna risposta)'
+  }
+
+  // Entra nel raw REPL di MicroPython, con tentativi ripetuti.
+  // Se fallisce, l'errore mostra cosa ha effettivamente risposto il dispositivo.
+  async _enterRawRepl(attempts = 3) {
+    for (let attempt = 1; attempt <= attempts; attempt++) {
+      this._clearRawBuffer()
+      // Ctrl-C due volte: interrompe qualsiasi programma in esecuzione (anche
+      // uno bloccato su sys.stdin.readline, come i nostri bot)
+      await this.writeRaw('\r\x03\x03')
+      await this._sleep(150)
+      await this.writeRaw('\r\x01') // Ctrl-A: entra nel raw REPL
+      try {
+        await this._waitFor('raw REPL', 1500, 'accesso al raw REPL')
+        return
+      } catch (error) {
+        if (attempt === attempts) {
+          throw new Error(
+            'Non riesco a entrare nel raw REPL di MicroPython. ' +
+            'Assicurati che sul microcontrollore sia installato MicroPython ' +
+            '(il firmware di fabbrica non basta). ' +
+            `Il dispositivo ha risposto: «${this._bufferSnippet()}»`
+          )
+        }
+      }
+    }
+  }
+
+  // Esegue una riga nel raw REPL e ritorna lo stdout; lancia su errore Python.
   async _execRaw(code, timeoutMs = 5000) {
     this._clearRawBuffer()
     await this.writeRaw(code)
-    await this.writeRaw('\x04')
+    await this.writeRaw('\x04') // Ctrl-D: esegue il blocco
+    // MicroPython conferma la ricezione con "OK", poi esegue
     await this._waitFor('OK', 3000, 'avvio esecuzione')
     await this._waitFor('\x04>', timeoutMs, 'fine esecuzione')
     // formato della risposta: OK<stdout>\x04<stderr>\x04>
     const match = this.rawBuffer.match(/OK([\s\S]*?)\x04([\s\S]*?)\x04>/)
-    if (match && match[2].trim()) {
-      throw new Error(`errore dal Pico: ${match[2].trim()}`)
+    if (!match) {
+      throw new Error(`risposta inattesa dal dispositivo: «${this._bufferSnippet()}»`)
     }
+    if (match[2].trim()) {
+      throw new Error(`errore dal microcontrollore: ${this._visible(match[2])}`)
+    }
+    return match[1]
   }
 
   async uploadMainPy(code, onProgress = () => { }) {
@@ -175,37 +240,48 @@ class PicoSerial {
       throw new Error('non connesso')
     }
 
-    onProgress('Interrompo il programma in esecuzione…')
-    await this.writeRaw('\r\x03')
-    await this._sleep(100)
-    await this.writeRaw('\x03')
-    await this._sleep(100)
+    onProgress('Entro nel raw REPL di MicroPython…')
+    await this._enterRawRepl()
 
-    onProgress('Entro nel raw REPL…')
-    this._clearRawBuffer()
-    await this.writeRaw('\r\x01')
-    await this._waitFor('raw REPL; CTRL-B to exit', 3000, 'accesso al raw REPL')
+    try {
+      onProgress('Preparo la scrittura di main.py…')
+      await this._execRaw(
+        "try:\n import binascii\nexcept ImportError:\n import ubinascii as binascii\nf=open('main.py','wb')"
+      )
 
-    onProgress('Scrivo main.py…')
-    await this._execRaw(
-      "try:\n import binascii\nexcept ImportError:\n import ubinascii as binascii\nf=open('main.py','wb')"
-    )
+      const bytes = new TextEncoder().encode(code)
+      // Chunk piccoli: il buffer USB-CDC dell'ESP32-S3 è limitato, e righe
+      // troppo lunghe possono perdersi. 128 byte grezzi → riga ~215 caratteri.
+      const CHUNK = 128
+      for (let i = 0; i < bytes.length; i += CHUNK) {
+        const chunk = bytes.slice(i, i + CHUNK)
+        const b64 = btoa(String.fromCharCode(...chunk))
+        await this._execRaw(`f.write(binascii.a2b_base64('${b64}'))`)
+        onProgress(`Scrittura: ${Math.min(i + CHUNK, bytes.length)}/${bytes.length} byte`)
+      }
+      await this._execRaw('f.close()')
 
-    const bytes = new TextEncoder().encode(code)
-    const CHUNK = 256
-    for (let i = 0; i < bytes.length; i += CHUNK) {
-      const chunk = bytes.slice(i, i + CHUNK)
-      const b64 = btoa(String.fromCharCode(...chunk))
-      await this._execRaw(`f.write(binascii.a2b_base64('${b64}'))`)
-      onProgress(`Scrittura: ${Math.min(i + CHUNK, bytes.length)}/${bytes.length} byte`)
+      // Verifica: la dimensione del file scritto deve corrispondere
+      onProgress('Verifico il file scritto…')
+      const stat = await this._execRaw("import os\nprint(os.stat('main.py')[6])")
+      const written = parseInt(this._visible(stat), 10)
+      if (written !== bytes.length) {
+        throw new Error(
+          `il file scritto è di ${written} byte invece di ${bytes.length}: ` +
+          'caricamento incompleto, riprova.'
+        )
+      }
+    } catch (error) {
+      // Prova a lasciare il dispositivo in uno stato pulito
+      try { await this.writeRaw('\x02') } catch { /* ignora */ }
+      throw error
     }
-    await this._execRaw("f.close()")
 
     onProgress('Soft reset: il tuo main.py parte ora…')
     this._clearRawBuffer()
     await this.writeRaw('\x02') // esce dal raw REPL
     await this._sleep(100)
     await this.writeRaw('\x04') // soft reset: al riavvio parte main.py
-    onProgress('Caricamento completato.')
+    onProgress('Caricamento completato con successo.')
   }
 }

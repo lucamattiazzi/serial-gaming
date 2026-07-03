@@ -1,16 +1,20 @@
 // ── Configurazione ───────────────────────────────────────────
-const MOVE_TIME_LIMIT_MS = 1000 // tempo massimo per mossa di un RP2040, pena sconfitta
+const MOVE_TIME_LIMIT_MS = 2000 // tempo massimo per mossa di un RP2040, pena sconfitta
 const CPU_MOVE_DELAY_MS = 400   // pausa estetica prima della mossa della CPU
+const CPU_MINIMAX_DEPTH = 6     // profondità dell'alpha-beta della CPU difficile
 const SERIES_GAMES = 5          // partite della sfida tra due RP2040
 const SERIES_TARGET = 3         // vittorie che chiudono la sfida in anticipo
 const SERIES_PAUSE_MS = 2000    // pausa tra una partita e l'altra della sfida
+
+const COLS = 7
+const ROWS = 6
 
 const PLAYER_TYPES = {
   HUMAN: 'human',
   PICO: 'pico',
   EMU: 'emu',
   CPU_RANDOM: 'cpu-random',
-  CPU_PERFECT: 'cpu-perfect',
+  CPU_MINIMAX: 'cpu-minimax',
 }
 
 // vero RP2040 o emulato: stesso protocollo, stesso limite di tempo
@@ -18,22 +22,57 @@ function isPicoLike(type) {
   return type === PLAYER_TYPES.PICO || type === PLAYER_TYPES.EMU
 }
 
-const WIN_TRIPLETS = [
-  [0, 1, 2], [3, 4, 5], [6, 7, 8],
-  [0, 3, 6], [1, 4, 7], [2, 5, 8],
-  [0, 4, 8], [2, 4, 6],
-]
+// ── Regole di Forza 4 (funzioni pure) ────────────────────────
+// board: 42 stringhe ("", "X", "O"), riga 0 in alto, indice = riga * 7 + colonna
+
+function validCols(board) {
+  const cols = []
+  for (let col = 0; col < COLS; col++) {
+    if (board[col] === '') cols.push(col)
+  }
+  return cols
+}
+
+function dropRow(board, col) {
+  for (let row = ROWS - 1; row >= 0; row--) {
+    if (board[row * COLS + col] === '') return row
+  }
+  return -1
+}
+
+function* windows() {
+  for (let row = 0; row < ROWS; row++) {
+    for (let col = 0; col < COLS; col++) {
+      const idx = row * COLS + col
+      if (col <= COLS - 4) yield [idx, idx + 1, idx + 2, idx + 3]
+      if (row <= ROWS - 4) yield [idx, idx + COLS, idx + 2 * COLS, idx + 3 * COLS]
+      if (col <= COLS - 4 && row <= ROWS - 4) yield [idx, idx + COLS + 1, idx + 2 * (COLS + 1), idx + 3 * (COLS + 1)]
+      if (col >= 3 && row <= ROWS - 4) yield [idx, idx + COLS - 1, idx + 2 * (COLS - 1), idx + 3 * (COLS - 1)]
+    }
+  }
+}
+
+function checkWinner(board) {
+  for (const line of windows()) {
+    const first = board[line[0]]
+    if (first && line.every(i => board[i] === first)) {
+      return { winner: first, line }
+    }
+  }
+  if (!board.includes('')) return { winner: 'TIE', line: null }
+  return null
+}
 
 // ── Elementi DOM ─────────────────────────────────────────────
 const statusDisplay = document.getElementById('status-display')
 const gameBoard = document.getElementById('game-board')
 const startButton = document.getElementById('start-button')
-const seriesRow = document.getElementById('series-row')
-const seriesToggle = document.getElementById('series-toggle')
-const seriesScore = document.getElementById('series-score')
 const timerEl = document.getElementById('timer')
 const timerFill = document.getElementById('timer-fill')
 const timerText = document.getElementById('timer-text')
+const seriesRow = document.getElementById('series-row')
+const seriesToggle = document.getElementById('series-toggle')
+const seriesScore = document.getElementById('series-score')
 
 // ── Stato di gioco ───────────────────────────────────────────
 const players = {
@@ -41,15 +80,15 @@ const players = {
   O: { type: PLAYER_TYPES.PICO, serial: null, pendingResolve: null },
 }
 
-const board = Array(9).fill('')
+const board = Array(COLS * ROWS).fill('')
 let gameActive = false
 let gamePlayed = false
 let currentSymbol = 'X'
-let lastMoveIndex = null
+let lastMoveCol = null
 let waitingHuman = false
 let timerInterval = null
-let series = null // { score: {X, O}, game: n } durante una sfida al meglio di 5
-const cells = []
+let series = null
+const slots = []
 
 // ── Setup giocatori ──────────────────────────────────────────
 for (const symbol of ['X', 'O']) {
@@ -58,7 +97,7 @@ for (const symbol of ['X', 'O']) {
   const connectButton = document.getElementById(`connect-${symbol}`)
   const emuRow = document.getElementById(`emu-row-${symbol}`)
 
-  document.getElementById(`emu-code-${symbol}`).value = BOT_TEMPLATES.tictactoe
+  document.getElementById(`emu-code-${symbol}`).value = BOT_TEMPLATES.forza4
 
   typeSelect.addEventListener('change', () => {
     const player = players[symbol]
@@ -96,21 +135,6 @@ async function connectPico(symbol) {
   updateControls()
 }
 
-function handlePicoLine(symbol, line) {
-  let parsed
-  try {
-    parsed = JSON.parse(line)
-  } catch {
-    return // output di debug del Pico, già loggato in console da PicoSerial
-  }
-  if (parsed == null || parsed.move == null) return
-  const resolve = players[symbol].pendingResolve
-  if (resolve) {
-    players[symbol].pendingResolve = null
-    resolve(parsed.move)
-  }
-}
-
 async function connectEmu(symbol) {
   const player = players[symbol]
   const button = document.getElementById(`emu-start-${symbol}`)
@@ -135,9 +159,28 @@ async function connectEmu(symbol) {
   updateControls()
 }
 
+function handlePicoLine(symbol, line) {
+  let parsed
+  try {
+    parsed = JSON.parse(line)
+  } catch {
+    return // output di debug del bot
+  }
+  if (parsed == null || parsed.move == null) return
+  const resolve = players[symbol].pendingResolve
+  if (resolve) {
+    players[symbol].pendingResolve = null
+    resolve(parsed.move)
+  }
+}
+
 function isReady(symbol) {
   const player = players[symbol]
   return !isPicoLike(player.type) || player.serial !== null
+}
+
+function seriesAvailable() {
+  return isPicoLike(players.X.type) && isPicoLike(players.O.type)
 }
 
 function updateControls() {
@@ -163,31 +206,38 @@ function updateControls() {
   seriesRow.hidden = !seriesAvailable()
 }
 
-function seriesAvailable() {
-  return isPicoLike(players.X.type) && isPicoLike(players.O.type)
-}
-
-// ── Scacchiera ───────────────────────────────────────────────
+// ── Griglia ──────────────────────────────────────────────────
 function buildBoard() {
   gameBoard.innerHTML = ''
-  cells.length = 0
-  for (let i = 0; i < 9; i++) {
-    const cell = document.createElement('div')
-    cell.classList.add('cell')
-    cell.dataset.index = i
-    cell.addEventListener('click', () => handleCellClick(i))
-    gameBoard.appendChild(cell)
-    cells.push(cell)
+  slots.length = 0
+  for (let row = 0; row < ROWS; row++) {
+    for (let col = 0; col < COLS; col++) {
+      const slot = document.createElement('div')
+      slot.classList.add('slot')
+      slot.dataset.col = col
+      slot.addEventListener('click', () => handleColumnClick(col))
+      slot.addEventListener('mouseenter', () => highlightColumn(col, true))
+      slot.addEventListener('mouseleave', () => highlightColumn(col, false))
+      gameBoard.appendChild(slot)
+      slots.push(slot)
+    }
   }
 }
 
-function renderCell(index, animate = false) {
-  const cell = cells[index]
-  cell.textContent = board[index]
-  cell.classList.remove('mark-x', 'mark-o', 'pop', 'win')
-  if (board[index] === 'X') cell.classList.add('mark-x')
-  if (board[index] === 'O') cell.classList.add('mark-o')
-  if (animate && board[index] !== '') cell.classList.add('pop')
+function highlightColumn(col, on) {
+  if (!gameActive || !waitingHuman) on = false
+  for (let row = 0; row < ROWS; row++) {
+    slots[row * COLS + col].classList.toggle('hover-col', on && board[row * COLS + col] === '')
+  }
+}
+
+function renderSlot(index, animate = false) {
+  const slot = slots[index]
+  slot.classList.remove('disc-x', 'disc-o', 'pop', 'win', 'playable', 'hover-col')
+  if (board[index] === 'X') slot.classList.add('disc-x')
+  if (board[index] === 'O') slot.classList.add('disc-o')
+  if (board[index] === '') slot.classList.add('playable')
+  if (animate && board[index] !== '') slot.classList.add('pop')
 }
 
 function setStatus(message, danger = false) {
@@ -215,12 +265,12 @@ function onStartClick() {
 function startGame(startSymbol) {
   board.fill('')
   currentSymbol = startSymbol
-  lastMoveIndex = null
+  lastMoveCol = null
   waitingHuman = false
   gameActive = true
   gamePlayed = true
   announceMatch()
-  for (let i = 0; i < 9; i++) renderCell(i)
+  for (let i = 0; i < board.length; i++) renderSlot(i)
   gameBoard.classList.remove('idle')
   updateControls()
   nextTurn()
@@ -234,18 +284,18 @@ async function nextTurn() {
 
   if (player.type === PLAYER_TYPES.HUMAN) {
     waitingHuman = true
-    setStatus(`Tocca a te, ${currentSymbol}: scegli una casella.`)
+    setStatus(`Tocca a te, ${currentSymbol}: scegli una colonna.`)
     return
   }
 
-  if (player.type === PLAYER_TYPES.CPU_RANDOM || player.type === PLAYER_TYPES.CPU_PERFECT) {
+  if (player.type === PLAYER_TYPES.CPU_RANDOM || player.type === PLAYER_TYPES.CPU_MINIMAX) {
     setStatus(`La CPU (${currentSymbol}) sta pensando…`)
     await sleep(CPU_MOVE_DELAY_MS)
     if (!gameActive) return
-    const move = player.type === PLAYER_TYPES.CPU_RANDOM
+    const col = player.type === PLAYER_TYPES.CPU_RANDOM
       ? randomMove(board)
       : bestMove(board, currentSymbol)
-    applyMove(move)
+    applyMove(col)
     return
   }
 
@@ -274,7 +324,7 @@ async function nextTurn() {
 function requestPicoMove(player) {
   const gameState = {
     board: remapBoardFor(currentSymbol),
-    lastMove: lastMoveIndex,
+    lastMove: lastMoveCol,
     winner: null,
   }
   return new Promise((resolve, reject) => {
@@ -290,20 +340,23 @@ function requestPicoMove(player) {
   })
 }
 
-function handleCellClick(index) {
-  if (!gameActive || !waitingHuman || board[index] !== '') return
+function handleColumnClick(col) {
+  if (!gameActive || !waitingHuman || dropRow(board, col) === -1) return
   waitingHuman = false
-  applyMove(index)
+  highlightColumn(col, false)
+  applyMove(col)
 }
 
 function isValidMove(move) {
-  return Number.isInteger(move) && move >= 0 && move <= 8 && board[move] === ''
+  return Number.isInteger(move) && move >= 0 && move < COLS && dropRow(board, move) !== -1
 }
 
-function applyMove(index) {
+function applyMove(col) {
+  const row = dropRow(board, col)
+  const index = row * COLS + col
   board[index] = currentSymbol
-  lastMoveIndex = index
-  renderCell(index, true)
+  lastMoveCol = col
+  renderSlot(index, true)
 
   const result = checkWinner(board)
   if (result) return endGame(result)
@@ -325,7 +378,7 @@ function endGame(result, reasonMessage = null) {
   highlightTurn(null)
 
   if (result.line) {
-    for (const i of result.line) cells[i].classList.add('win')
+    for (const i of result.line) slots[i].classList.add('win')
   }
 
   notifyPicos(result.winner)
@@ -339,6 +392,31 @@ function endGame(result, reasonMessage = null) {
   }
   if (series) handleSeriesResult(result.winner)
   updateControls()
+}
+
+// Notifica il risultato ai Pico connessi, veri o emulati
+function notifyPicos(winner) {
+  for (const symbol of ['X', 'O']) {
+    const player = players[symbol]
+    if (!isPicoLike(player.type) || player.serial === null) continue
+    player.pendingResolve = null
+    player.serial.sendMessage(envelope({
+      board: null,
+      lastMove: null,
+      winner: remapWinnerFor(symbol, winner),
+    }))
+  }
+}
+
+// ── Rimappatura simboli: ogni Pico si vede sempre come "O" ───
+function remapBoardFor(symbol) {
+  if (symbol === 'O') return [...board]
+  return board.map(c => (c === 'X' ? 'O' : c === 'O' ? 'X' : ''))
+}
+
+function remapWinnerFor(symbol, winner) {
+  if (winner === 'TIE' || symbol === 'O') return winner
+  return winner === 'X' ? 'O' : 'X'
 }
 
 // ── Sfida al meglio di 5 (solo RP2040 vs RP2040) ─────────────
@@ -382,33 +460,6 @@ function updateSeriesScoreboard() {
   seriesScore.textContent = `Sfida al meglio di ${SERIES_GAMES} — partita ${series.game} · X ${X} : ${O} O`
 }
 
-// Notifica il risultato ai Pico connessi, veri o emulati (serve ai bot che imparano)
-function notifyPicos(winner) {
-  for (const symbol of ['X', 'O']) {
-    const player = players[symbol]
-    if (!isPicoLike(player.type) || player.serial === null) continue
-    player.pendingResolve = null
-    player.serial.sendMessage(envelope({
-      board: null,
-      lastMove: null,
-      winner: remapWinnerFor(symbol, winner),
-    }))
-  }
-}
-
-// ── Rimappatura simboli ──────────────────────────────────────
-// Ogni Pico si vede sempre come "O" e l'avversario come "X",
-// così lo stesso codice MicroPython funziona in entrambi i ruoli.
-function remapBoardFor(symbol) {
-  if (symbol === 'O') return [...board]
-  return board.map(c => (c === 'X' ? 'O' : c === 'O' ? 'X' : ''))
-}
-
-function remapWinnerFor(symbol, winner) {
-  if (winner === 'TIE' || symbol === 'O') return winner
-  return winner === 'X' ? 'O' : 'X'
-}
-
 // ── Timer a video ────────────────────────────────────────────
 function startTimerDisplay() {
   const deadline = performance.now() + MOVE_TIME_LIMIT_MS
@@ -429,59 +480,86 @@ function stopTimerDisplay() {
   timerEl.hidden = true
 }
 
-// ── Regole del tris ──────────────────────────────────────────
-function checkWinner(b) {
-  for (const line of WIN_TRIPLETS) {
-    const [a, c, d] = line
-    if (b[a] && b[a] === b[c] && b[a] === b[d]) {
-      return { winner: b[a], line }
-    }
-  }
-  if (!b.includes('')) return { winner: 'TIE', line: null }
-  return null
-}
-
-function emptyIndexes(b) {
-  return b.reduce((acc, cell, i) => (cell === '' ? [...acc, i] : acc), [])
-}
-
 // ── CPU integrata ────────────────────────────────────────────
 function randomMove(b) {
-  const empty = emptyIndexes(b)
-  return empty[Math.floor(Math.random() * empty.length)]
+  const cols = validCols(b)
+  return cols[Math.floor(Math.random() * cols.length)]
+}
+
+function evaluate(b, me) {
+  const opp = other(me)
+  let score = 0
+  // leggera preferenza per il centro
+  for (let row = 0; row < ROWS; row++) {
+    if (b[row * COLS + 3] === me) score += 3
+  }
+  for (const line of windows()) {
+    let mine = 0
+    let theirs = 0
+    for (const i of line) {
+      if (b[i] === me) mine++
+      else if (b[i] === opp) theirs++
+    }
+    if (mine > 0 && theirs > 0) continue
+    if (mine === 3) score += 40
+    else if (mine === 2) score += 8
+    if (theirs === 3) score -= 60
+    else if (theirs === 2) score -= 8
+  }
+  return score
+}
+
+function alphabeta(b, depth, alpha, beta, maximizing, me) {
+  const result = checkWinner(b)
+  if (result) {
+    if (result.winner === 'TIE') return 0
+    return result.winner === me ? 100000 + depth : -100000 - depth
+  }
+  if (depth === 0) return evaluate(b, me)
+
+  const turn = maximizing ? me : other(me)
+  // esplora prima le colonne centrali: taglia molto di più
+  const cols = validCols(b).sort((a, c) => Math.abs(3 - a) - Math.abs(3 - c))
+  if (maximizing) {
+    let best = -Infinity
+    for (const col of cols) {
+      const idx = dropRow(b, col) * COLS + col
+      b[idx] = turn
+      best = Math.max(best, alphabeta(b, depth - 1, alpha, beta, false, me))
+      b[idx] = ''
+      alpha = Math.max(alpha, best)
+      if (alpha >= beta) break
+    }
+    return best
+  }
+  let best = Infinity
+  for (const col of cols) {
+    const idx = dropRow(b, col) * COLS + col
+    b[idx] = turn
+    best = Math.min(best, alphabeta(b, depth - 1, alpha, beta, true, me))
+    b[idx] = ''
+    beta = Math.min(beta, best)
+    if (alpha >= beta) break
+  }
+  return best
 }
 
 function bestMove(b, me) {
   let bestScore = -Infinity
   let best = []
-  for (const i of emptyIndexes(b)) {
-    b[i] = me
-    const score = minimaxScore(b, me, other(me), 1)
-    b[i] = ''
+  for (const col of validCols(b)) {
+    const idx = dropRow(b, col) * COLS + col
+    b[idx] = me
+    const score = alphabeta(b, CPU_MINIMAX_DEPTH - 1, -Infinity, Infinity, false, me)
+    b[idx] = ''
     if (score > bestScore) {
       bestScore = score
-      best = [i]
+      best = [col]
     } else if (score === bestScore) {
-      best.push(i)
+      best.push(col)
     }
   }
-  // a parità di punteggio sceglie a caso, per variare le partite
   return best[Math.floor(Math.random() * best.length)]
-}
-
-function minimaxScore(b, me, turn, depth) {
-  const result = checkWinner(b)
-  if (result) {
-    if (result.winner === 'TIE') return 0
-    return result.winner === me ? 10 - depth : depth - 10
-  }
-  const scores = emptyIndexes(b).map(i => {
-    b[i] = turn
-    const score = minimaxScore(b, me, other(turn), depth + 1)
-    b[i] = ''
-    return score
-  })
-  return turn === me ? Math.max(...scores) : Math.min(...scores)
 }
 
 function other(symbol) {
@@ -500,7 +578,7 @@ updateControls()
 // ── Busta di protocollo e integrazione torneo ────────────────
 // Ogni messaggio porta la busta {game, match}; a inizio partita i bot
 // ricevono un annuncio con la sola busta e i campi di gioco a null.
-const GAME_ID = 'tictactoe'
+const GAME_ID = 'forza4'
 const PLAYER_ORDER = ['X', 'O']
 let matchId = null
 let externalOnEnd = null

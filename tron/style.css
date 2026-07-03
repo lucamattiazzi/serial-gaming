@@ -1,0 +1,18 @@
+/* ── Specifico di Tron (layout comune in ../game.css) ────── */
+.side-badge.trail-p1 {
+  color: var(--x-color);
+}
+
+.side-badge.trail-p2 {
+  color: var(--o-color);
+}
+
+#tron-canvas {
+  width: 100%;
+  max-width: 640px;
+  aspect-ratio: 4 / 3;
+  background: #0a0c12;
+  border: 3px solid var(--border);
+  border-radius: 6px;
+  margin-bottom: 1.25rem;
+}

@@ -43,6 +43,17 @@
     </li>
   </ol>
 
+  <h2>La busta comune</h2>
+  <p>Ogni messaggio che ricevi contiene anche due campi di busta, omessi negli esempi di
+    questa pagina per brevità: <code>game</code> (qui <code>"tictactoe"</code>) e
+    <code>match</code>, un UUID che identifica la singola partita e resta identico dal primo
+    all'ultimo messaggio. All'inizio di ogni partita arriva inoltre un
+    <strong>annuncio</strong> con la sola busta e tutti i campi di gioco a <code>null</code>:
+    ignoralo, non rispondere. Grazie alla busta un solo <code>main.py</code> può giocare a
+    tutti i giochi, scegliendo il gestore in base a <code>state["game"]</code> — è ciò che
+    rende possibile la <a href="../torneo/">modalità torneo</a>.</p>
+  <pre><code>{"game": "tictactoe", "match": "3f2b1c4e-…", …campi del gioco…}</code></pre>
+
   <h2>Sei sempre «O»</h2>
   <p>Qualunque sia il tuo lato sulla scacchiera a video, <strong>il tuo simbolo nei messaggi è
       sempre <code>"O"</code></strong> e l'avversario è sempre <code>"X"</code>: ci pensa
@@ -132,6 +143,8 @@ while True:
         continue
     if state.get("winner") is not None:
         continue  # partita finita: qui puoi imparare dal risultato
+    if state.get("board") is None:
+        continue  # annuncio di inizio partita
     move = next_move(state["board"])
     print(json.dumps({"move": move}))</code></pre>
 

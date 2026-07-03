@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="it">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>API dell'Arena dei Mostri — Serial Gaming</title>
+  <link rel="stylesheet" href="../style.css">
+</head>
+
+<body class="home">
+  <p><a href="./">&larr; Torna al gioco</a> · <a href="../">Home</a></p>
+
+  <header class="hero">
+    <h1>Arena dei Mostri — <span class="accent">API del bot</span></h1>
+    <p>Sei l'allenatore: scegli la squadra, poi a ogni turno decidi se attaccare o cambiare
+      mostro. Tutto è visibile, niente è casuale: vince chi ragiona meglio.</p>
+  </header>
+
+  <h2>Come funziona</h2>
+  <p>Si gioca con squadre di <strong>3 mostri</strong> scelti da un roster comune di 8. Ogni
+    turno entrambi gli allenatori scelgono <strong>simultaneamente</strong>: attaccare con una
+    mossa del mostro in campo, o cambiare mostro. I cambi si risolvono prima degli attacchi;
+    poi attacca per primo il mostro più <strong>veloce</strong> (a parità: colpi simultanei).
+    Un mostro a 0 HP è KO: il suo allenatore deve mandarne in campo un altro. Vince chi azzera
+    la squadra avversaria; dopo 60 turni decide chi ha più HP percentuali. Non c'è nessuna
+    casualità: stesso scenario, stesso risultato.</p>
+
+  <h2>La busta comune</h2>
+  <p>Come tutti i giochi: ogni messaggio porta <code>game</code> (qui <code>"arena"</code>) e
+    <code>match</code> (UUID costante per tutta la partita), e a inizio partita arriva un
+    annuncio con i campi a <code>null</code> da ignorare. Gli esempi omettono la busta per
+    brevità.</p>
+
+  <h2>I tipi</h2>
+  <p>Quattro tipi in ciclo — <strong>fuoco → erba → elettro → acqua → fuoco</strong> — più il
+    tipo <em>normale</em> per le mosse. Una mossa fa danno <code>potenza × moltiplicatore</code>:</p>
+  <table>
+    <tr><th>Situazione</th><th>Moltiplicatore</th></tr>
+    <tr><td>Tipo <strong>successivo</strong> nel ciclo (es. fuoco → erba)</td><td>×2 (superefficace)</td></tr>
+    <tr><td>Tipo <strong>precedente</strong> nel ciclo (es. fuoco → acqua)</td><td>×0.5 (resiste)</td></tr>
+    <tr><td>Stesso tipo</td><td>×0.5</td></tr>
+    <tr><td>Tipo «opposto» (fuoco↔elettro, erba↔acqua)</td><td>×1</td></tr>
+    <tr><td>Mosse di tipo <em>normale</em></td><td>sempre ×1</td></tr>
+  </table>
+
+  <h2>Fase 1: il draft</h2>
+  <p>Ricevi il roster completo (statistiche e mosse incluse) e rispondi <strong>entro 3
+      secondi</strong> con gli indici dei 3 mostri scelti (distinti; l'avversario può scegliere
+    gli stessi):</p>
+  <pre><code>{"phase": "draft", "roster": [{"name": "Bracino", "type": "fuoco", "maxHp": 80,
+  "speed": 95, "moves": [{"name": "Vampata", "type": "fuoco", "power": 40}, ...]}, ...],
+ "picks": 3, ...}</code></pre>
+  <pre><code>{"team": [0, 3, 6]}</code></pre>
+  <p>Il primo mostro della squadra parte in campo. Squadra non valida = sconfitta.</p>
+
+  <h2>Fase 2: la battaglia</h2>
+  <p>Al tuo turno ricevi tutto lo stato, aperto (anche la squadra avversaria) più la storia
+    delle azioni — il bot può restare senza stato:</p>
+  <pre><code>{"phase": "battle", "turn": 4,
+ "you": {"active": 0, "team": [{"name": "Bracino", "type": "fuoco", "hp": 42, "maxHp": 80,
+          "speed": 95, "moves": [...]}, ...]},
+ "opp": {"active": 2, "team": [...]},
+ "history": [{"you": ["attacca", 0], "opp": ["cambia", 2]}, ...],
+ "winner": null}</code></pre>
+  <p>Rispondi <strong>entro 2 secondi</strong> con una delle due azioni:</p>
+  <pre><code>{"move": ["attacca", 0]}     ← indice della mossa del mostro in campo
+{"move": ["cambia", 2]}      ← indice del mostro in squadra (vivo, non già in campo)</code></pre>
+  <p>Quando il tuo mostro va KO ricevi un messaggio con <code>"phase": "replace"</code>: lì è
+    ammesso solo <code>["cambia", i]</code>. Azione non valida, tempo scaduto o disconnessione
+    = sconfitta. A fine partita: <code>winner</code> = <code>"you"</code>/<code>"opp"</code>/<code>"TIE"</code>.</p>
+
+  <h2>Esempio completo</h2>
+  <pre><code>import sys
+import json
+
+CICLO = ["fuoco", "erba", "elettro", "acqua"]
+
+
+def moltiplicatore(tipo_mossa, tipo_difensore):
+    if tipo_mossa == "normale" or tipo_difensore == "normale":
+        return 1
+    d = (CICLO.index(tipo_difensore) - CICLO.index(tipo_mossa)) % 4
+    if d == 1:
+        return 2
+    if d == 3 or d == 0:
+        return 0.5
+    return 1
+
+
+def scegli(state):
+    io = state["you"]["team"][state["you"]["active"]]
+    lui = state["opp"]["team"][state["opp"]["active"]]
+    if state["phase"] == "replace" or io["hp"] <= 0:
+        vivi = [i for i, m in enumerate(state["you"]["team"])
+                if m["hp"] > 0 and i != state["you"]["active"]]
+        return ["cambia", vivi[0]]
+    # attacca con la mossa che fa piu' danno
+    danni = [m["power"] * moltiplicatore(m["type"], lui["type"])
+             for m in io["moves"]]
+    return ["attacca", danni.index(max(danni))]
+
+
+while True:
+    line = sys.stdin.readline()
+    try:
+        state = json.loads(line)
+    except ValueError:
+        continue
+    if state.get("winner") is not None:
+        continue  # partita finita
+    if state.get("phase") == "draft":
+        print(json.dumps({"team": [0, 4, 7]}))  # fuoco + erba + elettro
+    elif state.get("phase") in ("battle", "replace"):
+        print(json.dumps({"move": scegli(state)}))</code></pre>
+
+  <h2>Consigli</h2>
+  <ul class="rules">
+    <li>Il cuore è il <strong>ciclo dei tipi</strong>: attacca il tipo su cui sei
+      superefficace, e cambia mostro quando quello in campo è «preda» dell'avversario.</li>
+    <li>Il cambio costa un turno di danni: fallo solo se il nuovo matchup lo ripaga. E
+      ricorda che l'avversario può prevederlo…</li>
+    <li>Le mosse <em>normali</em> (×1) battono le mosse forti quando queste sarebbero
+      resistite (40 × 0.5 = 20 &lt; 25).</li>
+    <li>Nel draft pensa alla copertura: tre tipi diversi non hanno buchi; due mostri dello
+      stesso tipo cadono con lo stesso avversario.</li>
+    <li>La <strong>velocità</strong> decide chi colpisce per primo: contro un mostro a un
+      colpo dal KO, essere più veloci vale una vita.</li>
+    <li>Tutto è deterministico: puoi simulare i turni futuri sul RP2040, se ti stanno nei 2
+      secondi.</li>
+  </ul>
+</body>
+
+</html>

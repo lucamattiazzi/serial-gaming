@@ -1,0 +1,112 @@
+/* ── Specifico della morra (layout comune in ../game.css) ── */
+.hand-row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.hand-row .hand {
+  font-size: 1.5rem;
+  padding: 0.35rem 0.9rem;
+  line-height: 1;
+}
+
+#arena {
+  width: 100%;
+  max-width: 560px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  margin-bottom: 1.25rem;
+  text-align: center;
+}
+
+#arena.idle {
+  opacity: 0.55;
+}
+
+#round-label {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  margin-bottom: 0.75rem;
+}
+
+#hands {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.hand-display {
+  font-size: 4rem;
+  line-height: 1;
+  min-width: 5rem;
+}
+
+.hand-display.flip {
+  transform: scaleX(-1);
+}
+
+.hand-display.reveal {
+  animation: reveal 0.25s ease-out;
+}
+
+@keyframes reveal {
+  0% {
+    transform: scale(0.5);
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.hand-display.flip.reveal {
+  animation: reveal-flip 0.25s ease-out;
+}
+
+@keyframes reveal-flip {
+  0% {
+    transform: scaleX(-1) scale(0.5);
+    opacity: 0;
+  }
+  100% {
+    transform: scaleX(-1) scale(1);
+    opacity: 1;
+  }
+}
+
+#big-score {
+  font-family: var(--font-mono);
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--accent);
+  min-width: 6rem;
+}
+
+#history-strip {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.25rem;
+  min-height: 1.4rem;
+  font-size: 0.95rem;
+}
+
+#history-strip .round-chip {
+  border-radius: 6px;
+  padding: 0.05rem 0.3rem;
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+}
+
+#history-strip .round-chip.win-P1 {
+  border-color: var(--x-color);
+}
+
+#history-strip .round-chip.win-P2 {
+  border-color: var(--o-color);
+}

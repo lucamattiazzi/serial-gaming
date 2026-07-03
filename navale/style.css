@@ -1,0 +1,81 @@
+/* ── Specifico della battaglia navale ─────────────────────── */
+#boards {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-bottom: 1.25rem;
+}
+
+#boards.idle {
+  opacity: 0.55;
+}
+
+.board-wrap h3 {
+  margin: 0 0 0.5rem;
+  font-size: 0.9rem;
+  text-align: center;
+  color: var(--text-dim);
+  font-weight: 600;
+}
+
+.sea {
+  --cell: min(7.5vw, 30px);
+  display: grid;
+  grid-template-columns: repeat(10, var(--cell));
+  grid-template-rows: repeat(10, var(--cell));
+  gap: 2px;
+  padding: 6px;
+  background: #0d1526;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.sea .cell {
+  background: #17233f;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(var(--cell) * 0.6);
+  line-height: 1;
+  user-select: none;
+}
+
+.sea.targetable .cell.untried {
+  cursor: crosshair;
+}
+
+.sea.targetable .cell.untried:hover {
+  background: rgba(79, 209, 197, 0.35);
+}
+
+.sea .cell.ship {
+  background: #3d4d75;
+}
+
+.sea .cell.miss {
+  color: rgba(232, 234, 242, 0.5);
+}
+
+.sea .cell.miss::after {
+  content: "•";
+}
+
+.sea .cell.hit {
+  background: #7c2c35;
+  color: #ffb0b0;
+}
+
+.sea .cell.hit::after {
+  content: "✕";
+}
+
+.sea .cell.sunk {
+  background: var(--danger);
+  color: #2b0a0e;
+}
+
+.sea .cell.sunk::after {
+  content: "✕";
+}

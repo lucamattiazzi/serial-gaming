@@ -4,38 +4,115 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Editor — Serial Gaming</title>
+  <title>Laboratorio — Serial Gaming</title>
   <link rel="stylesheet" href="../style.css">
   <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/blockly/blockly_compressed.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/blockly/blocks_compressed.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/blockly/python_compressed.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/blockly/msg/it.js"></script>
 </head>
 
-<body class="game-page">
-  <header>
-    <a class="back" href="../">&larr; Home</a>
-    <h1>Editor</h1>
+<body class="lab">
+  <header class="topbar">
+    <span class="brand"><a href="../">Serial <span class="accent">Gaming</span></a> · Laboratorio</span>
+    <nav id="level-tabs">
+      <a href="#blocchi" data-level="blocchi">🧩 Blocchi</a>
+      <a href="#python" data-level="python">🐍 Python</a>
+      <a href="#carte" data-level="carte">🃏 Carte</a>
+    </nav>
   </header>
 
-  <p class="intro">Scrivi qui il tuo bot in MicroPython e caricalo sul tuo RP2040 senza uscire dal
-    browser: il codice viene salvato come <code>main.py</code> e avviato subito con un soft reset.
-    Poi vai alla pagina del gioco e premi &ldquo;Connetti&rdquo;. Attenzione: cambiare template
-    sostituisce tutto il codice nell'editor.</p>
-
-  <div class="toolbar">
-    <select id="template-select" aria-label="Template">
-      <option value="tictactoe" selected>Template: Tris (bot casuale)</option>
-      <option value="chess">Template: Scacchi (scheletro)</option>
-    </select>
-    <button id="connect-button" class="btn small">Connetti RP2040</button>
-    <span class="conn-status" id="conn-status">non connesso</span>
-    <button id="upload-button" class="btn primary small" disabled>Carica sul Pico</button>
+  <div class="toolbar" id="game-toolbar">
+    <label>Gioco:
+      <select id="lab-game" aria-label="Gioco">
+        <option value="forza4" selected>Forza 4</option>
+        <option value="tictactoe">Tris</option>
+        <option value="morra">Morra cinese</option>
+        <option value="navale">Battaglia navale</option>
+        <option value="chess">Scacchi</option>
+      </select>
+    </label>
   </div>
 
-  <textarea id="code" spellcheck="false"></textarea>
+  <!-- ── LIVELLO BLOCCHI ────────────────────────────────────── -->
+  <section id="level-blocchi" class="level">
+    <p class="intro">Costruisci la tua strategia incastrando i blocchi: si leggono dall'alto
+      in basso, e il primo «gioca…» che scatta decide la mossa. Se nessuna regola scatta, il
+      bot gioca a caso (e non fa mai mosse invalide — negli scacchi il motore ti passa solo
+      mosse legali). Poi provalo contro la CPU o caricalo sul Pico!</p>
+    <div id="blockly-div"></div>
+    <details id="generated-details">
+      <summary>Guarda il codice MicroPython generato</summary>
+      <pre id="generated"></pre>
+    </details>
+  </section>
+
+  <!-- ── LIVELLO PYTHON ─────────────────────────────────────── -->
+  <section id="level-python" class="level" hidden>
+    <p class="intro">MicroPython vero, con un template funzionante per ogni gioco. Il codice
+      viene salvato come <code>main.py</code> sul Pico e avviato con un soft reset.
+      Attenzione: cambiare template sostituisce tutto il codice.</p>
+    <div class="toolbar">
+      <select id="template-select" aria-label="Template">
+        <option value="tictactoe" selected>Template: Tris (bot casuale)</option>
+        <option value="forza4">Template: Forza 4 (colonna casuale)</option>
+        <option value="morra">Template: Morra cinese (anti-frequenza)</option>
+        <option value="pong">Template: Pong (segui la palla)</option>
+        <option value="tron">Template: Tron (tira dritto e svolta)</option>
+        <option value="navale">Template: Battaglia navale (caccia semplice)</option>
+        <option value="racetrack">Template: Racetrack (prudente)</option>
+        <option value="arena">Template: Arena dei Mostri (allenatore base)</option>
+        <option value="chess">Template: Scacchi (scheletro)</option>
+        <option value="torneo">Template: Torneo (multi-gioco)</option>
+      </select>
+    </div>
+    <textarea id="code" spellcheck="false"></textarea>
+  </section>
+
+  <!-- ── LIVELLO CARTE ──────────────────────────────────────── -->
+  <section id="level-carte" class="level" hidden>
+    <p class="intro">Componi il tuo bot mettendo in fila le carte: si leggono dall'alto in
+      basso e <strong>la prima che scatta decide la mossa</strong>. L'ordine è la strategia!
+      Se nessuna carta scatta, il bot gioca a caso.</p>
+    <div class="cards-wrap">
+      <div class="cards-col">
+        <h3>Carte disponibili <small>(clicca per aggiungere)</small></h3>
+        <div id="cards-available"></div>
+      </div>
+      <div class="cards-col">
+        <h3>Il tuo bot <small>(dall'alto in basso)</small></h3>
+        <ol id="cards-deck"></ol>
+      </div>
+    </div>
+    <details>
+      <summary>Guarda il codice MicroPython generato</summary>
+      <pre id="generated-carte"></pre>
+    </details>
+  </section>
+
+  <!-- ── BARRA AZIONI COMUNE ────────────────────────────────── -->
+  <div class="action-bar">
+    <button id="try-button" class="btn primary">▶ Prova contro la CPU</button>
+    <span class="spacer"></span>
+    <button id="connect-button" class="btn small">Connetti RP2040</button>
+    <span class="conn-status" id="conn-status">non connesso</span>
+    <button id="upload-button" class="btn small" disabled>Carica sul Pico</button>
+  </div>
 
   <pre id="log" hidden></pre>
 
+  <div id="test-frame"></div>
+
   <script src="../picoserial.js"></script>
   <script src="../bot-templates.js"></script>
+  <script src="../emupico.js"></script>
+  <script src="lab-common.js"></script>
+  <script src="forza4-blocks.js"></script>
+  <script src="tictactoe-blocks.js"></script>
+  <script src="morra-blocks.js"></script>
+  <script src="navale-blocks.js"></script>
+  <script src="chess-blocks.js"></script>
   <script src="script.js"></script>
 </body>
 

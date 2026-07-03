@@ -303,6 +303,7 @@ function startGame(colors) {
   legalTargets = new Map()
   gameActive = true
   gamePlayed = true
+  announceMatch()
   updateColorBadges()
   renderBoard()
   gameBoard.classList.remove('idle')
@@ -374,7 +375,7 @@ function requestPicoMove(player) {
       clearTimeout(timeout)
       resolve(move)
     }
-    player.serial.sendMessage(JSON.stringify(gameState))
+    player.serial.sendMessage(envelope(gameState))
   })
 }
 
@@ -437,7 +438,7 @@ function notifyPicos(winner) {
     const player = players[id]
     if (!isPicoLike(player.type) || player.serial === null) continue
     player.pendingResolve = null
-    player.serial.sendMessage(JSON.stringify({
+    player.serial.sendMessage(envelope({
       fen: null,
       lastMove: null,
       winner,
@@ -542,3 +543,60 @@ startButton.addEventListener('click', onStartClick)
 buildBoard()
 renderBoard()
 updateControls()
+
+// ── Busta di protocollo e integrazione torneo ────────────────
+// Ogni messaggio porta la busta {game, match}; a inizio partita i bot
+// ricevono un annuncio con la sola busta e i campi di gioco a null.
+const GAME_ID = 'chess'
+const PLAYER_ORDER = ['P1', 'P2']
+let matchId = null
+let externalOnEnd = null
+
+function envelope(payload) {
+  return JSON.stringify({ game: GAME_ID, match: matchId, ...payload })
+}
+
+function newMatchId() {
+  return typeof crypto !== 'undefined' && crypto.randomUUID
+    ? crypto.randomUUID()
+    : `m-${Date.now()}-${Math.random().toString(16).slice(2)}`
+}
+
+function announceMatch() {
+  matchId = newMatchId()
+  for (const id of PLAYER_ORDER) {
+    const player = players[id]
+    if (!isPicoLike(player.type) || player.serial === null) continue
+    player.serial.sendMessage(envelope({ fen: null, lastMove: null, winner: null }))
+  }
+}
+
+const baseEndGame = endGame
+endGame = function (...args) {
+  baseEndGame(...args)
+  if (externalOnEnd) {
+    const onEnd = externalOnEnd
+    externalOnEnd = null
+    onEnd(args[0].winner === 'TIE' ? 'TIE' : colorOf[args[0].winner])
+  }
+}
+
+// La pagina può essere pilotata da un contenitore (modalità torneo):
+// riceve le seriali già connesse e gioca una singola partita.
+globalThis.startExternalMatch = function (serials, onEnd) {
+  externalOnEnd = onEnd
+  document.body.classList.add('external-match')
+  PLAYER_ORDER.forEach((id, i) => {
+    // uno slot può essere una CPU integrata: si passa il suo tipo come stringa
+    if (typeof serials[i] === 'string') {
+      players[id].type = serials[i]
+      players[id].serial = null
+      return
+    }
+    players[id].type = PLAYER_TYPES.PICO
+    players[id].serial = serials[i]
+    serials[i].onmessage(line => handlePicoLine(id, line))
+    serials[i].ondisconnect(() => { players[id].serial = null })
+  })
+  startGame(Math.random() < 0.5 ? { w: 'P1', b: 'P2' } : { w: 'P2', b: 'P1' })
+}

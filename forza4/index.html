@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Tris — Serial Gaming</title>
+  <title>Forza 4 — Serial Gaming</title>
   <link rel="stylesheet" href="../style.css">
   <link rel="stylesheet" href="../game.css">
   <link rel="stylesheet" href="style.css">
@@ -13,19 +13,19 @@
 <body class="game-page">
   <header>
     <a class="back" href="../">&larr; Home</a>
-    <h1>Tris</h1>
+    <h1>Forza 4</h1>
     <a class="api-link" href="docs.html">API per il bot</a>
   </header>
 
   <section id="setup">
     <div class="player-card" id="card-X">
-      <h2><span class="mark mark-x">X</span> Giocatore X</h2>
+      <h2><span class="disc disc-x"></span> Giocatore X</h2>
       <select id="type-X" aria-label="Tipo giocatore X">
         <option value="human" selected>Umano</option>
         <option value="pico">RP2040 (seriale)</option>
         <option value="emu">RP2040 emulato (Python nel browser)</option>
         <option value="cpu-random">CPU facile</option>
-        <option value="cpu-perfect">CPU difficile</option>
+        <option value="cpu-minimax">CPU difficile</option>
       </select>
       <div class="conn-row" id="conn-row-X" hidden>
         <button id="connect-X" class="btn small">Connetti</button>
@@ -43,13 +43,13 @@
     <span class="vs">vs</span>
 
     <div class="player-card" id="card-O">
-      <h2><span class="mark mark-o">O</span> Giocatore O</h2>
+      <h2><span class="disc disc-o"></span> Giocatore O</h2>
       <select id="type-O" aria-label="Tipo giocatore O">
         <option value="human">Umano</option>
         <option value="pico" selected>RP2040 (seriale)</option>
         <option value="emu">RP2040 emulato (Python nel browser)</option>
         <option value="cpu-random">CPU facile</option>
-        <option value="cpu-perfect">CPU difficile</option>
+        <option value="cpu-minimax">CPU difficile</option>
       </select>
       <div class="conn-row" id="conn-row-O">
         <button id="connect-O" class="btn small">Connetti</button>
