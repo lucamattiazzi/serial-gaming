@@ -1,6 +1,6 @@
-/* ── Pagina di gioco ─────────────────────────────────────── */
+/* ── Pagina scacchi: riusa il layout della pagina di gioco ── */
 .game-page {
-  max-width: 720px;
+  max-width: 760px;
   margin: 0 auto;
   padding: 1.5rem 1.25rem 3rem;
   display: flex;
@@ -39,7 +39,6 @@
   font-size: 0.95rem;
 }
 
-/* ── Setup giocatori ─────────────────────────────────────── */
 #setup {
   display: flex;
   align-items: stretch;
@@ -81,24 +80,23 @@
   gap: 0.5rem;
 }
 
-.mark {
+.color-badge {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  width: 1.6rem;
-  height: 1.6rem;
-  border-radius: 6px;
-  font-weight: 800;
+  padding: 0.1rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: #e8eaf2;
+  color: #14161d;
+  border: 1px solid var(--border);
 }
 
-.mark-x {
-  color: var(--x-color);
-  background: rgba(94, 177, 255, 0.12);
-}
-
-.mark-o {
-  color: var(--o-color);
-  background: rgba(255, 180, 84, 0.12);
+.color-badge.black {
+  background: #14161d;
+  color: #e8eaf2;
 }
 
 .player-card select {
@@ -200,68 +198,108 @@
 
 /* ── Scacchiera ──────────────────────────────────────────── */
 #game-board {
+  --sq: min(11vw, 58px);
   display: grid;
-  grid-template-columns: repeat(3, minmax(90px, 110px));
-  grid-template-rows: repeat(3, minmax(90px, 110px));
-  gap: 10px;
+  grid-template-columns: repeat(8, var(--sq));
+  grid-template-rows: repeat(8, var(--sq));
+  border: 3px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
   margin-bottom: 1.25rem;
+  user-select: none;
 }
 
 #game-board.idle {
   opacity: 0.55;
 }
 
-.cell {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
+.square {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 3.2rem;
-  font-weight: 800;
+  font-size: calc(var(--sq) * 0.72);
+  line-height: 1;
   cursor: default;
-  user-select: none;
-  transition: background 0.15s, border-color 0.15s, transform 0.1s;
 }
 
-#game-board.human-turn .cell:empty {
+.square.light {
+  background: #ebd6b0;
+}
+
+.square.dark {
+  background: #a97a52;
+}
+
+.square.piece-w {
+  color: #fafafa;
+  text-shadow: 0 0 2px #1a1a1a, 0 1px 2px rgba(0, 0, 0, 0.6);
+}
+
+.square.piece-b {
+  color: #1c1c1c;
+  text-shadow: 0 0 2px rgba(255, 255, 255, 0.35);
+}
+
+.square.last-move::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(79, 209, 197, 0.28);
+}
+
+.square.selected::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(94, 177, 255, 0.4);
+}
+
+.square.target::after {
+  content: "";
+  position: absolute;
+  width: 26%;
+  height: 26%;
+  border-radius: 50%;
+  background: rgba(15, 17, 23, 0.45);
+}
+
+.square.target.capture::after {
+  width: 84%;
+  height: 84%;
+  background: none;
+  border: 4px solid rgba(15, 17, 23, 0.45);
+}
+
+#game-board.human-turn .square.own-piece,
+#game-board.human-turn .square.target {
   cursor: pointer;
 }
 
-#game-board.human-turn .cell:empty:hover {
-  background: var(--accent-soft);
-  border-color: var(--accent);
+/* coordinate ai bordi */
+.square[data-rank-label]::before,
+.square[data-file-label]::after {
+  position: absolute;
+  font-size: calc(var(--sq) * 0.2);
+  font-weight: 700;
+  font-family: var(--font-mono);
+  opacity: 0.6;
+  text-shadow: none;
+  pointer-events: none;
 }
 
-.cell.mark-x {
-  color: var(--x-color);
-  background: transparent;
+.square[data-rank-label]::before {
+  content: attr(data-rank-label);
+  top: 2px;
+  left: 3px;
+  color: #3d2a1a;
 }
 
-.cell.mark-o {
-  color: var(--o-color);
-  background: transparent;
-}
-
-.cell.pop {
-  animation: pop 0.25s ease-out;
-}
-
-@keyframes pop {
-  0% {
-    transform: scale(0.4);
-    opacity: 0;
-  }
-  100% {
-    transform: scale(1);
-    opacity: 1;
-  }
-}
-
-.cell.win {
-  border-color: var(--accent);
-  box-shadow: 0 0 14px rgba(79, 209, 197, 0.4);
+.square[data-file-label]::after {
+  content: attr(data-file-label);
+  bottom: 1px;
+  right: 3px;
+  color: #3d2a1a;
 }
 
 /* ── Stato ───────────────────────────────────────────────── */
@@ -279,10 +317,5 @@
 @media (max-width: 560px) {
   #setup {
     flex-direction: column;
-  }
-
-  #game-board {
-    grid-template-columns: repeat(3, 84px);
-    grid-template-rows: repeat(3, 84px);
   }
 }

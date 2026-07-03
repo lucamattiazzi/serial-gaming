@@ -1,2 +1,120 @@
-<a href="/tictactoe">tictactoe</a>
-<a href="/chess">chess</a>
+<!DOCTYPE html>
+<html lang="it">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Serial Gaming — sfide tra RP2040</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body class="home">
+  <header class="hero">
+    <h1>Serial <span class="accent">Gaming</span></h1>
+    <p>Scrivi un bot in MicroPython, caricalo sul tuo RP2040 e sfida un amico (o la CPU)
+      direttamente dal browser, via WebSerial.</p>
+  </header>
+
+  <h2>Come funziona</h2>
+  <ol class="steps">
+    <li>
+      <strong>Scrivi il tuo bot</strong>
+      <span>In MicroPython: legge lo stato del gioco come riga JSON da stdin e risponde con la
+        sua mossa, sempre in JSON, su stdout.</span>
+    </li>
+    <li>
+      <strong>Caricalo sul Pico</strong>
+      <span>Copia il codice come <code>main.py</code> sul tuo RP2040 (con Thonny o
+        <code>mpremote</code>), oppure usa l'<a href="editor/">editor integrato</a> e caricalo
+        direttamente dal browser.</span>
+    </li>
+    <li>
+      <strong>Collega e sfida</strong>
+      <span>Apri il gioco con Chrome o Edge, collega il Pico via USB, premi
+        &ldquo;Connetti&rdquo; e inizia la partita.</span>
+    </li>
+  </ol>
+
+  <h2>Le regole</h2>
+  <ul class="rules">
+    <li>La piattaforma è un <strong>RP2040</strong>: il tuo bot deve girare lì sopra, con i suoi
+      limiti di memoria e di velocità.</li>
+    <li>Ogni mossa ha un limite di tempo: <strong>1 secondo</strong> per il tris,
+      <strong>5 secondi</strong> per gli scacchi. Se il bot non risponde in tempo, perde la
+      partita.</li>
+    <li>Una <strong>mossa non valida</strong> (casella occupata, mossa illegale, JSON
+      malformato) vale come sconfitta immediata.</li>
+    <li>Puoi giocare <strong>1 vs 1</strong> (il tuo Pico contro quello di un amico, entrambi
+      collegati allo stesso computer) oppure <strong>1 vs CPU</strong> per allenare il tuo bot
+      contro l'avversario integrato nel browser.</li>
+    <li>Con due RP2040 collegati potete lanciare la <strong>sfida al meglio di 5</strong>: chi
+      inizia (o chi ha il Bianco) viene sorteggiato a ogni partita.</li>
+    <li>Niente hardware sottomano? Scegli <strong>«RP2040 emulato»</strong> nella pagina del
+      gioco: scrivi il codice lì e viene eseguito nel browser (Pyodide). Perfetto per
+      sviluppare il bot prima di caricarlo sul Pico vero.</li>
+  </ul>
+
+  <h2>Il protocollo — tris <small>(<a href="tictactoe/docs.html">documentazione completa</a>)</small></h2>
+  <p>A ogni tuo turno ricevi una riga JSON. <strong>Il tuo simbolo è sempre <code>"O"</code></strong>,
+    anche se sulla scacchiera a video giochi come X: ci pensa il browser a rimappare i simboli.</p>
+  <pre><code>{"board": ["X", "", "", "", "O", "", "", "", ""], "lastMove": 0, "winner": null}</code></pre>
+  <p>Rispondi con l'indice della casella scelta (0&ndash;8, da sinistra a destra, dall'alto in
+    basso):</p>
+  <pre><code>{"move": 6}</code></pre>
+  <p>A fine partita ricevi una notifica con il vincitore (utile per i bot che imparano, come
+    <code>ai_map</code>):</p>
+  <pre><code>{"board": null, "lastMove": null, "winner": "O"}</code></pre>
+
+  <p>Un bot minimo, giusto per partire:</p>
+  <pre><code>import sys
+import json
+
+while True:
+    line = sys.stdin.readline()
+    state = json.loads(line)
+    if state["winner"] is not None:
+        continue  # partita finita
+    move = state["board"].index("")  # prima casella libera
+    print(json.dumps({"move": move}))</code></pre>
+
+  <p class="note">Nel repository trovi tre bot di esempio in <code>tictactoe/</code>:
+    <code>ai_random</code> (mosse casuali), <code>ai_minmax</code> (minimax a profondità
+    limitata) e <code>ai_map</code> (impara dalle partite giocate). Occhio: con il limite a 1
+    secondo, un minimax troppo lento sul RP2040 perde a tavolino.</p>
+
+  <h2>Il protocollo — scacchi <small>(<a href="chess/docs.html">documentazione completa</a>)</small></h2>
+  <p>Stessa logica del tris, ma lo stato è il <a
+      href="https://it.wikipedia.org/wiki/Notazione_Forsyth-Edwards">FEN</a> della posizione: da
+    lì ricavi anche di chi è il turno, cioè il tuo colore (ti interroghiamo solo quando tocca a
+    te).</p>
+  <pre><code>{"fen": "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", "lastMove": null, "winner": null}</code></pre>
+  <p>Rispondi con la mossa in notazione <em>casella di partenza + casella di arrivo</em>
+    (promozione con lettera finale, es. <code>e7e8q</code>). Una mossa illegale vale sconfitta:
+    generare mosse legali su un RP2040 è la parte difficile — e il bello del gioco.</p>
+  <pre><code>{"move": "e2e4"}</code></pre>
+  <p>A fine partita: <code>{"fen": null, "lastMove": null, "winner": "w" | "b" | "TIE"}</code>.</p>
+
+  <h2>Scegli il gioco</h2>
+  <div class="games">
+    <div class="game-card">
+      <span class="icon">#</span>
+      <h3>Tris</h3>
+      <p>Il classico. Perfetto per iniziare a scrivere il tuo primo bot.</p>
+      <a class="btn primary" href="tictactoe/">Gioca</a>
+    </div>
+    <div class="game-card">
+      <span class="icon">♞</span>
+      <h3>Scacchi</h3>
+      <p>Il tuo bot reggerà una partita intera su un RP2040?</p>
+      <a class="btn primary" href="chess/">Gioca</a>
+    </div>
+    <div class="game-card">
+      <span class="icon">&gt;_</span>
+      <h3>Editor</h3>
+      <p>Scrivi il bot e caricalo sul Pico direttamente dal browser.</p>
+      <a class="btn" href="editor/">Apri</a>
+    </div>
+  </div>
+</body>
+
+</html>

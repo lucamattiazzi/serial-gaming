@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="it">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Editor — Serial Gaming</title>
+  <link rel="stylesheet" href="../style.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body class="game-page">
+  <header>
+    <a class="back" href="../">&larr; Home</a>
+    <h1>Editor</h1>
+  </header>
+
+  <p class="intro">Scrivi qui il tuo bot in MicroPython e caricalo sul tuo RP2040 senza uscire dal
+    browser: il codice viene salvato come <code>main.py</code> e avviato subito con un soft reset.
+    Poi vai alla pagina del gioco e premi &ldquo;Connetti&rdquo;. Attenzione: cambiare template
+    sostituisce tutto il codice nell'editor.</p>
+
+  <div class="toolbar">
+    <select id="template-select" aria-label="Template">
+      <option value="tictactoe" selected>Template: Tris (bot casuale)</option>
+      <option value="chess">Template: Scacchi (scheletro)</option>
+    </select>
+    <button id="connect-button" class="btn small">Connetti RP2040</button>
+    <span class="conn-status" id="conn-status">non connesso</span>
+    <button id="upload-button" class="btn primary small" disabled>Carica sul Pico</button>
+  </div>
+
+  <textarea id="code" spellcheck="false"></textarea>
+
+  <pre id="log" hidden></pre>
+
+  <script src="../picoserial.js"></script>
+  <script src="../bot-templates.js"></script>
+  <script src="script.js"></script>
+</body>
+
+</html>
