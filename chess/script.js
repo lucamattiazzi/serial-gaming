@@ -1,5 +1,5 @@
 // ── Configurazione ───────────────────────────────────────────
-const MOVE_TIME_LIMIT_MS = 5000 // tempo massimo per mossa di un RP2040, pena sconfitta
+const MOVE_TIME_LIMIT_MS = 1000 // tempo massimo per mossa di un RP2040, pena sconfitta
 const CPU_MOVE_DELAY_MS = 400   // pausa estetica prima della mossa della CPU
 const SERIES_GAMES = 5          // partite della sfida tra due RP2040
 const SERIES_TARGET = 3         // vittorie che chiudono la sfida in anticipo

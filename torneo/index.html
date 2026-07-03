@@ -65,15 +65,15 @@
 
   <fieldset id="pool">
     <legend>Pool di giochi (ne servono almeno 3)</legend>
-    <label><input type="checkbox" value="tictactoe" checked> Tris</label>
-    <label><input type="checkbox" value="forza4" checked> Forza 4</label>
-    <label><input type="checkbox" value="morra" checked> Morra cinese</label>
-    <label><input type="checkbox" value="pong" checked> Pong</label>
-    <label><input type="checkbox" value="tron" checked> Tron</label>
-    <label><input type="checkbox" value="navale" checked> Battaglia navale</label>
-    <label><input type="checkbox" value="racetrack" checked> Racetrack</label>
-    <label><input type="checkbox" value="arena" checked> Arena dei Mostri</label>
-    <label><input type="checkbox" value="chess"> Scacchi</label>
+    <label data-game="tictactoe"><input type="checkbox" value="tictactoe" checked> Tris</label>
+    <label data-game="forza4"><input type="checkbox" value="forza4" checked> Forza 4</label>
+    <label data-game="morra"><input type="checkbox" value="morra" checked> Morra cinese</label>
+    <label data-game="pong"><input type="checkbox" value="pong" checked> Pong</label>
+    <label data-game="tron"><input type="checkbox" value="tron" checked> Tron</label>
+    <label data-game="navale"><input type="checkbox" value="navale" checked> Battaglia navale</label>
+    <label data-game="racetrack"><input type="checkbox" value="racetrack" checked> Racetrack</label>
+    <label data-game="arena"><input type="checkbox" value="arena" checked> Arena dei Mostri</label>
+    <label data-game="chess"><input type="checkbox" value="chess"> Scacchi</label>
   </fieldset>
 
   <div class="actions">
@@ -92,6 +92,7 @@
   <script src="../picoserial.js"></script>
   <script src="../bot-templates.js"></script>
   <script src="../emupico.js"></script>
+  <script src="../config.js"></script>
   <script src="script.js"></script>
 </body>
 

@@ -114,7 +114,7 @@
   </ul>
   <p>Le regole di arbitraggio:</p>
   <ul class="rules">
-    <li><strong>Tempo massimo: 5 secondi</strong> dal momento in cui l'arbitro invia la
+    <li><strong>Tempo massimo: 1 secondo</strong> dal momento in cui l'arbitro invia la
       posizione. Nessuna risposta in tempo = sconfitta.</li>
     <li><strong>Mossa illegale</strong> = sconfitta immediata. Vale anche per il formato
       sbagliato. Generare mosse legali su un RP2040 è la parte difficile della sfida: nessuno
@@ -166,8 +166,8 @@ while True:
   <ul class="rules">
     <li>Con la console del browser aperta (F12) vedi tutto il traffico seriale, incluse le
       stampe di debug del tuo bot.</li>
-    <li>Cinque secondi sul RP2040 bastano per una ricerca poco profonda: prima le mosse legali
-      giuste, poi la profondità.</li>
+    <li>Un secondo sul RP2040 è pochissimo per gli scacchi: pensa prima a generare mosse
+      legali in fretta, la profondità viene dopo.</li>
     <li>Occhio alla memoria: l'RP2040 ha ~264&nbsp;KB di RAM. Rappresentazioni compatte della
       scacchiera ripagano.</li>
     <li>Non uscire mai dal loop: dopo la notifica di fine partita arriveranno altre

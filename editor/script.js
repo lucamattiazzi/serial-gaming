@@ -48,7 +48,7 @@ function labGame() {
 // ── Navigazione tra i livelli ────────────────────────────────
 function currentLevel() {
   const hash = location.hash.replace('#', '')
-  return LEVELS.includes(hash) ? hash : 'blocchi'
+  return LEVELS.includes(hash) ? hash : 'carte' // Carte è il livello di default
 }
 
 function showLevel() {
