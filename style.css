@@ -8,11 +8,19 @@
   --text-dim: #9aa1b5;
   --accent: #4fd1c5;
   --accent-soft: rgba(79, 209, 197, 0.12);
+  --accent-2: #ff8cc6;
   --x-color: #5eb1ff;
   --o-color: #ffb454;
   --danger: #ff6b6b;
-  --radius: 12px;
+  --radius: 14px;
   --font-mono: "SF Mono", "Fira Code", Menlo, Consolas, monospace;
+  /* palette giocosa per le card dei giochi */
+  --c-blue: #5eb1ff;
+  --c-pink: #ff8cc6;
+  --c-amber: #ffb454;
+  --c-green: #8ce68c;
+  --c-purple: #b39dff;
+  --c-teal: #4fd1c5;
 }
 
 * {
@@ -22,7 +30,12 @@
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  background: var(--bg);
+  background:
+    radial-gradient(900px 520px at 6% -8%, rgba(79, 209, 197, 0.10), transparent 60%),
+    radial-gradient(820px 520px at 100% -2%, rgba(179, 157, 255, 0.10), transparent 55%),
+    radial-gradient(720px 520px at 50% 118%, rgba(255, 140, 198, 0.07), transparent 60%),
+    var(--bg);
+  background-attachment: fixed;
   color: var(--text);
   line-height: 1.6;
 }
@@ -65,20 +78,25 @@ pre code {
 .btn {
   display: inline-block;
   padding: 0.6rem 1.4rem;
-  border-radius: var(--radius);
+  border-radius: 999px;
   border: 1px solid var(--border);
   background: var(--bg-card);
   color: var(--text);
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.15s, border-color 0.15s, opacity 0.15s;
+  transition: transform 0.12s ease, background 0.15s, border-color 0.15s, box-shadow 0.15s, opacity 0.15s;
 }
 
 .btn:hover:not(:disabled) {
   border-color: var(--accent);
   background: var(--accent-soft);
   text-decoration: none;
+  transform: translateY(-1px);
+}
+
+.btn:active:not(:disabled) {
+  transform: translateY(0);
 }
 
 .btn:disabled {
@@ -87,13 +105,15 @@ pre code {
 }
 
 .btn.primary {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: #0b2422;
+  background: linear-gradient(135deg, #5fe0d2, #4fd1c5);
+  border-color: transparent;
+  color: #08251f;
+  box-shadow: 0 6px 16px rgba(79, 209, 197, 0.28);
 }
 
 .btn.primary:hover:not(:disabled) {
-  background: #6ee0d5;
+  background: linear-gradient(135deg, #74e9dc, #5bd8cc);
+  box-shadow: 0 10px 24px rgba(79, 209, 197, 0.38);
 }
 
 .btn.small {
@@ -169,13 +189,17 @@ pre code {
 }
 
 .home .hero h1 {
-  font-size: 2.6rem;
+  font-size: 2.9rem;
   margin: 0 0 0.5rem;
   letter-spacing: -0.02em;
 }
 
-.home .hero h1 .accent {
-  color: var(--accent);
+.home .hero h1 .accent,
+.brand .accent {
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
 
 .home .hero p {
@@ -229,6 +253,10 @@ pre code {
   margin-bottom: 0.6rem;
 }
 
+.home .steps li:nth-child(1)::before { background: rgba(94, 177, 255, 0.16); color: var(--c-blue); }
+.home .steps li:nth-child(2)::before { background: rgba(255, 140, 198, 0.16); color: var(--c-pink); }
+.home .steps li:nth-child(3)::before { background: rgba(255, 180, 84, 0.16); color: var(--c-amber); }
+
 .home .steps li strong {
   display: block;
   margin-bottom: 0.25rem;
@@ -264,24 +292,53 @@ pre code {
 }
 
 .game-card {
+  --tint: var(--accent);
+  position: relative;
+  overflow: hidden;
   background: var(--bg-card);
   border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 1.5rem;
+  border-radius: 18px;
+  padding: 1.6rem 1.5rem 1.5rem;
   text-align: center;
-  transition: border-color 0.15s, transform 0.15s;
+  transition: border-color 0.15s, transform 0.15s, box-shadow 0.15s;
+}
+
+/* barretta colorata in cima a ogni card */
+.game-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 4px;
+  background: var(--tint);
+  opacity: 0.85;
 }
 
 .game-card:hover {
-  border-color: var(--accent);
-  transform: translateY(-2px);
+  border-color: var(--tint);
+  transform: translateY(-4px);
+  box-shadow: 0 14px 30px color-mix(in srgb, var(--tint) 22%, transparent);
 }
 
 .game-card .icon {
-  font-size: 2.5rem;
-  display: block;
-  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 3.4rem;
+  height: 3.4rem;
+  margin: 0 auto 0.7rem;
+  border-radius: 18px;
+  font-size: 1.9rem;
+  background: color-mix(in srgb, var(--tint) 16%, transparent);
+  color: var(--tint);
 }
+
+/* ogni card prende un colore diverso, in ciclo */
+.games .game-card:nth-child(6n + 1) { --tint: var(--c-blue); }
+.games .game-card:nth-child(6n + 2) { --tint: var(--c-pink); }
+.games .game-card:nth-child(6n + 3) { --tint: var(--c-amber); }
+.games .game-card:nth-child(6n + 4) { --tint: var(--c-green); }
+.games .game-card:nth-child(6n + 5) { --tint: var(--c-purple); }
+.games .game-card:nth-child(6n + 6) { --tint: var(--c-teal); }
 
 .game-card h3 {
   margin: 0 0 0.35rem;
@@ -421,7 +478,10 @@ pre code {
   gap: 0.5rem;
 }
 
+/* Il codice del bot emulato si scrive nel Laboratorio: nella pagina di gioco
+   non serve, quindi resta nel DOM (per farlo girare) ma non si mostra. */
 .emu-code {
+  display: none;
   width: 100%;
   min-height: 210px;
   resize: vertical;

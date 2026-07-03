@@ -5,6 +5,8 @@ const CPU_MOVE_DELAY_MS = 350
 const EVENT_PAUSE_MS = 700       // pausa tra gli eventi del turno, per seguire la battaglia
 const MAX_TURNS = 60             // oltre: decide chi ha più HP percentuali
 const TEAM_SIZE = 3
+const DEFEND_REDUCTION = 0.5    // difendendosi si dimezza il danno ricevuto…
+const DEFEND_REFLECT = 0.35     // …e se ne restituisce una parte all'attaccante
 const SERIES_GAMES = 5
 const SERIES_TARGET = 3
 const SERIES_PAUSE_MS = 2500
@@ -22,17 +24,26 @@ function isPicoLike(type) {
 }
 
 // ── Il bestiario ─────────────────────────────────────────────
-// Le emoji sono segnaposto: quando ci saranno le sprite basta cambiare
-// spriteFor() qui sotto.
+// Ogni mostro ha DUE attacchi (indice 0 e 1), entrambi del suo tipo:
+//   0 = forte   → tanta potenza ma può fallire (precisione bassa)
+//   1 = preciso → meno potenza ma va sempre a segno
+// Le emoji sono segnaposto: per usare delle sprite basta cambiare spriteFor().
+function attacks(type, strongName, preciseName) {
+  return [
+    { name: strongName, type, power: 45, accuracy: 0.7 },
+    { name: preciseName, type, power: 27, accuracy: 1.0 },
+  ]
+}
+
 const ROSTER = [
-  { name: 'Bracino', type: 'fuoco', emoji: '🦊', maxHp: 80, speed: 95, moves: [{ name: 'Vampata', type: 'fuoco', power: 40 }, { name: 'Graffio', type: 'normale', power: 25 }, { name: 'Scintilla', type: 'elettro', power: 30 }] },
-  { name: 'Magmone', type: 'fuoco', emoji: '🐗', maxHp: 125, speed: 40, moves: [{ name: 'Eruzione', type: 'fuoco', power: 40 }, { name: 'Testata', type: 'normale', power: 25 }] },
-  { name: 'Ondina', type: 'acqua', emoji: '🐬', maxHp: 105, speed: 75, moves: [{ name: 'Idrogetto', type: 'acqua', power: 40 }, { name: 'Spruzzo', type: 'normale', power: 25 }] },
-  { name: 'Abissone', type: 'acqua', emoji: '🐋', maxHp: 125, speed: 35, moves: [{ name: 'Maremoto', type: 'acqua', power: 40 }, { name: 'Colpo di coda', type: 'normale', power: 25 }, { name: 'Alghette', type: 'erba', power: 30 }] },
-  { name: 'Fogliolino', type: 'erba', emoji: '🦎', maxHp: 85, speed: 80, moves: [{ name: 'Frustata', type: 'erba', power: 40 }, { name: 'Foglielama', type: 'normale', power: 25 }] },
-  { name: 'Quercione', type: 'erba', emoji: '🐢', maxHp: 125, speed: 30, moves: [{ name: 'Radicata', type: 'erba', power: 40 }, { name: 'Tronchetto', type: 'normale', power: 25 }, { name: 'Goccioloni', type: 'acqua', power: 30 }] },
-  { name: 'Volterio', type: 'elettro', emoji: '🐦', maxHp: 82, speed: 85, moves: [{ name: 'Fulmine', type: 'elettro', power: 40 }, { name: 'Beccata', type: 'normale', power: 25 }] },
-  { name: 'Tuonotauro', type: 'elettro', emoji: '🐂', maxHp: 90, speed: 55, moves: [{ name: 'Saetta', type: 'elettro', power: 40 }, { name: 'Cornata', type: 'normale', power: 25 }, { name: 'Fiammella', type: 'fuoco', power: 30 }] },
+  { name: 'Bracino', type: 'fuoco', emoji: '🦊', maxHp: 80, speed: 95, moves: attacks('fuoco', 'Vampata', 'Graffio') },
+  { name: 'Magmone', type: 'fuoco', emoji: '🐗', maxHp: 125, speed: 40, moves: attacks('fuoco', 'Eruzione', 'Braci') },
+  { name: 'Ondina', type: 'acqua', emoji: '🐬', maxHp: 105, speed: 75, moves: attacks('acqua', 'Maremoto', 'Spruzzo') },
+  { name: 'Abissone', type: 'acqua', emoji: '🐋', maxHp: 125, speed: 35, moves: attacks('acqua', 'Idrocannone', 'Ondata') },
+  { name: 'Fogliolino', type: 'erba', emoji: '🦎', maxHp: 85, speed: 80, moves: attacks('erba', 'Frustata', 'Fogliolina') },
+  { name: 'Quercione', type: 'erba', emoji: '🐢', maxHp: 125, speed: 30, moves: attacks('erba', 'Radicata', 'Rametto') },
+  { name: 'Volterio', type: 'elettro', emoji: '🐦', maxHp: 82, speed: 90, moves: attacks('elettro', 'Saetta', 'Beccata') },
+  { name: 'Tuonotauro', type: 'elettro', emoji: '🐂', maxHp: 100, speed: 50, moves: attacks('elettro', 'Fulmine', 'Cornata') },
 ]
 
 // Ciclo dei tipi: ognuno è forte (x2) sul successivo e debole (x0.5)
@@ -59,15 +70,17 @@ function spriteFor(monster) {
 // battle = { teams: {P1: [mostri con hp], P2: [...]}, active: {P1: i, P2: i}, turn }
 
 function makeBattle(picksP1, picksP2) {
-  const build = picks => picks.map(i => ({
+  const build = picks => picks.map((i, pos) => ({
     ...ROSTER[i],
     moves: ROSTER[i].moves.map(m => ({ ...m })),
     hp: ROSTER[i].maxHp,
+    seen: pos === 0, // il primo mostro parte in campo, quindi è già svelato
   }))
   return {
     teams: { P1: build(picksP1), P2: build(picksP2) },
     active: { P1: 0, P2: 0 },
     turn: 0,
+    lastSummary: null, // riassunto del turno precedente (per il campo lastTurn)
   }
 }
 
@@ -85,74 +98,114 @@ function teamWiped(battle, id) {
   return battle.teams[id].every(m => m.hp <= 0)
 }
 
-// azione: ["attacca", indiceMossa] oppure ["cambia", indiceMostro]
+// azione: ["attacca", 0|1] · ["difendi"] · ["cambia", indiceMostro]
 function validAction(battle, id, action, replaceOnly = false) {
-  if (!Array.isArray(action) || action.length !== 2) return false
+  if (!Array.isArray(action) || action.length < 1) return false
   const [kind, index] = action
-  if (!Number.isInteger(index)) return false
   if (kind === 'cambia') {
+    if (!Number.isInteger(index)) return false
     const target = battle.teams[id][index]
     return target !== undefined && target.hp > 0 && index !== battle.active[id]
   }
+  if (replaceOnly) return false // dopo un KO si può solo cambiare
+  if (kind === 'difendi') {
+    return activeMonster(battle, id).hp > 0
+  }
   if (kind === 'attacca') {
-    if (replaceOnly) return false
     const mon = activeMonster(battle, id)
-    return mon.hp > 0 && mon.moves[index] !== undefined
+    return Number.isInteger(index) && mon.hp > 0 && mon.moves[index] !== undefined
   }
   return false
 }
 
-// Risolve un turno con entrambe le azioni; ritorna la lista di eventi
-function resolveTurn(battle, actions) {
+// Risolve un turno con entrambe le azioni; ritorna la lista di eventi e
+// salva su battle.lastSummary il riassunto (per il campo lastTurn dei bot).
+// rng è iniettabile per i test; in gioco usa Math.random (attacchi che falliscono).
+function resolveTurn(battle, actions, rng = Math.random) {
   const events = []
   battle.turn++
+  const summary = {
+    P1: { action: actions.P1, hit: null, dealt: 0, taken: 0, reflected: 0 },
+    P2: { action: actions.P2, hit: null, dealt: 0, taken: 0, reflected: 0 },
+  }
 
   // 1) i cambi hanno la priorità
   for (const id of ['P1', 'P2']) {
     if (actions[id][0] === 'cambia') {
       battle.active[id] = actions[id][1]
-      events.push({ kind: 'switch', id, monster: activeMonster(battle, id).name })
+      const mon = activeMonster(battle, id)
+      mon.seen = true
+      events.push({ kind: 'switch', id, monster: mon.name })
     }
   }
 
-  // 2) gli attacchi, in ordine di velocità (pari velocità: simultanei)
+  // 2) le difese sono una "posa" del turno (mitigano e restituiscono danno)
+  const defending = { P1: false, P2: false }
+  for (const id of ['P1', 'P2']) {
+    if (actions[id][0] === 'difendi') {
+      defending[id] = true
+      events.push({ kind: 'defend', id, monster: activeMonster(battle, id).name })
+    }
+  }
+
+  // 3) gli attacchi, in ordine di velocità (pari velocità: simultanei)
   const attackers = ['P1', 'P2'].filter(id => actions[id][0] === 'attacca')
+  let simultaneous = false
+  let ordered = attackers
   if (attackers.length === 2) {
     const s1 = activeMonster(battle, 'P1').speed
     const s2 = activeMonster(battle, 'P2').speed
-    if (s1 === s2) {
-      const hits = attackers.map(id => computeHit(battle, id, actions[id][1]))
-      for (const hit of hits) applyHit(battle, hit, events)
-      return events
+    if (s1 === s2) simultaneous = true
+    else ordered = [...attackers].sort((a, b) => activeMonster(battle, b).speed - activeMonster(battle, a).speed)
+  }
+
+  if (simultaneous) {
+    const hits = ordered.map(id => computeHit(battle, id, actions[id][1], defending[otherId(id)], rng))
+    for (const hit of hits) applyHit(battle, hit, events, summary)
+  } else {
+    for (const id of ordered) {
+      if (activeMonster(battle, id).hp <= 0) continue // messo KO prima di agire
+      applyHit(battle, computeHit(battle, id, actions[id][1], defending[otherId(id)], rng), events, summary)
     }
-    attackers.sort((a, b) => activeMonster(battle, b).speed - activeMonster(battle, a).speed)
   }
-  for (const id of attackers) {
-    if (activeMonster(battle, id).hp <= 0) continue // messo KO prima di agire
-    applyHit(battle, computeHit(battle, id, actions[id][1]), events)
-  }
+
+  battle.lastSummary = summary
   return events
 }
 
-function computeHit(battle, id, moveIndex) {
-  const oppId = id === 'P1' ? 'P2' : 'P1'
+function computeHit(battle, id, moveIndex, defenderDefending, rng) {
+  const oppId = otherId(id)
   const attacker = activeMonster(battle, id)
   const defender = activeMonster(battle, oppId)
   const move = attacker.moves[moveIndex]
+  const base = { id, oppId, attacker: attacker.name, move: move.name, moveIndex }
+  if (rng() >= move.accuracy) {
+    return { ...base, hit: false, damage: 0, reflected: 0, multiplier: 1, defended: defenderDefending }
+  }
   const multiplier = typeMultiplier(move.type, defender.type)
+  const raw = Math.round(move.power * multiplier)
   return {
-    id,
-    oppId,
-    attacker: attacker.name,
-    move: move.name,
-    damage: Math.round(move.power * multiplier),
+    ...base,
+    hit: true,
     multiplier,
+    defended: defenderDefending,
+    damage: defenderDefending ? Math.round(raw * (1 - DEFEND_REDUCTION)) : raw,
+    reflected: defenderDefending ? Math.round(raw * DEFEND_REFLECT) : 0,
   }
 }
 
-function applyHit(battle, hit, events) {
+function applyHit(battle, hit, events, summary) {
   const defender = activeMonster(battle, hit.oppId)
-  defender.hp = Math.max(0, defender.hp - hit.damage)
+  if (hit.hit) {
+    defender.hp = Math.max(0, defender.hp - hit.damage)
+    if (summary) { summary[hit.id].dealt += hit.damage; summary[hit.oppId].taken += hit.damage }
+    if (hit.reflected > 0) {
+      const attacker = activeMonster(battle, hit.id)
+      attacker.hp = Math.max(0, attacker.hp - hit.reflected)
+      if (summary) { summary[hit.oppId].reflected += hit.reflected; summary[hit.id].taken += hit.reflected }
+    }
+  }
+  if (summary) summary[hit.id].hit = hit.hit
   events.push({ kind: 'hit', ...hit, defender: defender.name, ko: defender.hp <= 0 })
 }
 
@@ -171,30 +224,31 @@ function remainingRatio(battle, id) {
 }
 
 // ── CPU ──────────────────────────────────────────────────────
+// danno atteso di una mossa (tiene conto di potenza, efficacia e precisione)
+function moveEv(move, defender) {
+  return move.power * typeMultiplier(move.type, defender.type) * move.accuracy
+}
+
 function bestMoveIndex(attacker, defender) {
   let best = 0
-  let bestDamage = -1
+  let bestEv = -1
   attacker.moves.forEach((move, i) => {
-    const damage = move.power * typeMultiplier(move.type, defender.type)
-    if (damage > bestDamage) {
-      bestDamage = damage
-      best = i
-    }
+    const ev = moveEv(move, defender)
+    if (ev > bestEv) { bestEv = ev; best = i }
   })
   return best
 }
 
 function cpuAction(battle, id, level, replaceOnly) {
-  const oppId = id === 'P1' ? 'P2' : 'P1'
+  const oppId = otherId(id)
   const me = activeMonster(battle, id)
   const foe = activeMonster(battle, oppId)
   const bench = battle.teams[id]
     .map((m, i) => ({ m, i }))
     .filter(({ m, i }) => m.hp > 0 && i !== battle.active[id])
 
-  const matchup = candidate =>
-    candidate.moves.reduce((best, mv) => Math.max(best, mv.power * typeMultiplier(mv.type, foe.type)), 0)
-    - foe.moves.reduce((best, mv) => Math.max(best, mv.power * typeMultiplier(mv.type, candidate.type)), 0)
+  const bestEvAgainst = (atk, def) => Math.max(...atk.moves.map(mv => moveEv(mv, def)))
+  const matchup = candidate => bestEvAgainst(candidate, foe) - bestEvAgainst(foe, candidate)
 
   if (replaceOnly) {
     if (bench.length === 0) return ['cambia', battle.active[id]] // non succede: arbitro chiude prima
@@ -206,20 +260,24 @@ function cpuAction(battle, id, level, replaceOnly) {
   }
 
   if (level === PLAYER_TYPES.CPU_RANDOM) {
-    // quasi sempre attacca con una mossa a caso, ogni tanto cambia
-    if (bench.length > 0 && Math.random() < 0.15) {
-      return ['cambia', bench[Math.floor(Math.random() * bench.length)].i]
-    }
-    return ['attacca', Math.floor(Math.random() * me.moves.length)]
+    const r = Math.random()
+    if (bench.length > 0 && r < 0.12) return ['cambia', bench[Math.floor(Math.random() * bench.length)].i]
+    if (r < 0.22) return ['difendi']
+    return ['attacca', Math.random() < 0.5 ? 0 : 1]
   }
 
-  // CPU allenatore: cambia se il matchup è pessimo e in panchina c'è di meglio
-  const myScore = matchup(me)
-  if (bench.length > 0) {
-    const best = [...bench].sort((a, b) => matchup(b.m) - matchup(a.m))[0]
-    if (myScore < -20 && matchup(best.m) > myScore + 30) {
-      return ['cambia', best.i]
-    }
+  // CPU allenatore
+  const foeThreat = bestEvAgainst(foe, me)
+  const bestBench = bench.length ? [...bench].sort((a, b) => matchup(b.m) - matchup(a.m))[0] : null
+
+  // sto per essere messo KO e sono più lento: difenditi (mitiga + contraccolpo),
+  // a meno che in panchina non ci sia un mostro decisamente migliore
+  if (me.hp <= foeThreat && me.speed < foe.speed && me.hp / me.maxHp < 0.5) {
+    if (!bestBench || matchup(bestBench.m) < matchup(me) + 40) return ['difendi']
+  }
+  // matchup pessimo e in panchina c'è di meglio: cambia
+  if (bestBench && matchup(me) < -20 && matchup(bestBench.m) > matchup(me) + 30) {
+    return ['cambia', bestBench.i]
   }
   return ['attacca', bestMoveIndex(me, foe)]
 }
@@ -441,13 +499,18 @@ function renderBattle(hurtId = null) {
 
     const bench = document.getElementById(`bench-${id}`)
     bench.innerHTML = ''
+    // la panchina avversaria è nascosta: si svela un mostro solo quando entra
+    // in campo (per un umano, la propria squadra è sempre visibile)
+    const revealAll = players[id].type === PLAYER_TYPES.HUMAN
     battle.teams[id].forEach((m, i) => {
+      const known = revealAll || m.seen
       const slot = document.createElement('span')
       slot.classList.add('bench-slot')
       if (m.hp <= 0) slot.classList.add('ko')
       if (i === battle.active[id]) slot.classList.add('in-field')
-      slot.textContent = spriteFor(m)
-      slot.title = `${m.name} — ${m.hp}/${m.maxHp} HP`
+      if (!known) slot.classList.add('unknown')
+      slot.textContent = known ? spriteFor(m) : '❓'
+      slot.title = known ? `${m.name} — ${m.hp}/${m.maxHp} HP` : 'Mostro sconosciuto'
       bench.appendChild(slot)
     })
   }
@@ -525,7 +588,7 @@ function getDraft(id) {
       turn: 0,
       you: null,
       opp: null,
-      history: null,
+      lastTurn: null,
       winner: null,
     }))
   })
@@ -613,9 +676,16 @@ async function battleLoop() {
       if (event.kind === 'switch') {
         logBattle(`▶ L'Allenatore ${playerNumber(event.id)} richiama e manda in campo ${event.monster}!`)
         renderBattle()
+      } else if (event.kind === 'defend') {
+        logBattle(`🛡️ ${event.monster} si mette in difesa.`)
+        renderBattle()
+      } else if (!event.hit) {
+        logBattle(`💨 ${event.attacker} tenta ${event.move}… ma manca il colpo!`)
       } else {
         const eff = event.multiplier > 1 ? ' È superefficace!' : event.multiplier < 1 ? ' Non è molto efficace…' : ''
-        logBattle(`💥 ${event.attacker} usa ${event.move}: ${event.damage} danni a ${event.defender}.${eff}${event.ko ? ` ${event.defender} è KO!` : ''}`)
+        const def = event.defended ? ' (attutito dalla difesa)' : ''
+        const refl = event.reflected > 0 ? ` ${event.defender} restituisce ${event.reflected} danni!` : ''
+        logBattle(`💥 ${event.attacker} usa ${event.move}: ${event.damage} danni a ${event.defender}.${eff}${def}${event.ko ? ` ${event.defender} è KO!` : ''}${refl}`)
         renderBattle(event.oppId)
       }
       await sleep(EVENT_PAUSE_MS)
@@ -679,10 +749,18 @@ function humanAction(id, replaceOnly) {
         button.classList.add('btn', 'small')
         const mult = typeMultiplier(move.type, foe.type)
         const hint = mult > 1 ? ' ↑' : mult < 1 ? ' ↓' : ''
-        button.innerHTML = `${move.name} <span class="type-badge type-${move.type}">${move.type}</span> ${move.power}${hint}`
+        const acc = Math.round(move.accuracy * 100)
+        const kind = i === 0 ? 'forte' : 'preciso'
+        button.innerHTML = `${move.name} <span class="type-badge type-${move.type}">${move.type}</span> ${move.power}${hint} · ${acc}% <small>${kind}</small>`
         button.addEventListener('click', () => done(['attacca', i]))
         moveButtons.appendChild(button)
       })
+      const defendButton = document.createElement('button')
+      defendButton.classList.add('btn', 'small')
+      defendButton.innerHTML = '🛡️ Difenditi'
+      defendButton.title = 'Dimezza il danno ricevuto e ne restituisci una parte all\'avversario'
+      defendButton.addEventListener('click', () => done(['difendi']))
+      moveButtons.appendChild(defendButton)
     }
     battle.teams[id].forEach((m, i) => {
       if (m.hp <= 0 || i === battle.active[id]) return
@@ -695,17 +773,42 @@ function humanAction(id, replaceOnly) {
   })
 }
 
-function sideView(id) {
+// la tua squadra la vedi tutta
+function ownView(id) {
   return {
     active: battle.active[id],
     team: battle.teams[id].map(m => ({
-      name: m.name,
-      type: m.type,
-      hp: m.hp,
-      maxHp: m.maxHp,
-      speed: m.speed,
-      moves: m.moves,
+      name: m.name, type: m.type, hp: m.hp, maxHp: m.maxHp, speed: m.speed, moves: m.moves,
     })),
+  }
+}
+
+// dell'avversario conosci solo il mostro in campo e quanti gliene restano:
+// la panchina (identità dei mostri in riserva) è SEGRETA
+function oppView(id) {
+  const mon = activeMonster(battle, id)
+  const alive = battle.teams[id].filter(m => m.hp > 0).length
+  return {
+    active: { name: mon.name, type: mon.type, hp: mon.hp, maxHp: mon.maxHp, speed: mon.speed, moves: mon.moves },
+    alive,                                      // mostri ancora vivi (attivo compreso)
+    bench: Math.max(0, alive - (mon.hp > 0 ? 1 : 0)), // quanti in riserva (identità ignote)
+  }
+}
+
+// cosa è successo nel turno precedente, dal punto di vista di `id`
+function lastTurnFor(id) {
+  const s = battle.lastSummary
+  if (!s) return null
+  const you = s[id]
+  const opp = s[otherId(id)]
+  return {
+    you: { action: you.action, hit: you.hit, dealt: you.dealt, taken: you.taken, reflected: you.reflected },
+    opp: {
+      action: opp.action[0], // "attacca" | "difendi" | "cambia" (non si svela quale mostro)
+      move: opp.action[0] === 'attacca' ? (opp.action[1] === 0 ? 'forte' : 'preciso') : null,
+      hit: opp.hit,
+      dealt: opp.dealt, // danni che ti ha inflitto
+    },
   }
 }
 
@@ -715,9 +818,9 @@ function stateFor(id, phase) {
     roster: null,
     picks: null,
     turn: battle.turn,
-    you: sideView(id),
-    opp: sideView(otherId(id)),
-    history: history.map(h => ({ you: h[id], opp: h[otherId(id)] })),
+    you: ownView(id),
+    opp: oppView(otherId(id)),
+    lastTurn: lastTurnFor(id),
     winner: null,
   }
 }
@@ -757,7 +860,7 @@ function notifyBots(winnerId) {
       turn: battle ? battle.turn : 0,
       you: null,
       opp: null,
-      history: null,
+      lastTurn: null,
       winner: winnerId === 'TIE' ? 'TIE' : id === winnerId ? 'you' : 'opp',
     }))
   }
@@ -855,7 +958,7 @@ function announceMatch() {
     if (!isPicoLike(player.type) || player.serial === null) continue
     player.serial.sendMessage(envelope({
       phase: null, roster: null, picks: null, turn: 0,
-      you: null, opp: null, history: null, winner: null,
+      you: null, opp: null, lastTurn: null, winner: null,
     }))
   }
 }

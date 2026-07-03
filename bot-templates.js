@@ -433,9 +433,16 @@ while True:
   arena: `import sys
 import json
 
-# Arena dei Mostri: draft di 3 mostri, poi ogni turno (simultaneo)
-# {"move": ["attacca", indice_mossa]} oppure {"move": ["cambia", indice_mostro]}.
-# Con "phase": "replace" e' ammesso solo il cambio. Tutto entro 2 secondi.
+# Arena dei Mostri: prima il draft (3 mostri), poi ogni turno (simultaneo)
+# rispondi con una di queste azioni entro 2 secondi:
+#   ["attacca", 0]  attacco forte  (potente ma puo' fallire)
+#   ["attacca", 1]  attacco preciso (meno potente, sempre a segno)
+#   ["difendi"]     dimezzi il danno ricevuto e ne restituisci una parte
+#   ["cambia", i]   mandi in campo il mostro i (vivo, non quello gia' in campo)
+# Con "phase":"replace" (dopo un KO) e' ammesso solo ["cambia", i].
+# ATTENZIONE: dell'avversario vedi solo il mostro in campo (opp["active"]) e
+# quanti gliene restano (opp["alive"]); la sua PANCHINA e' segreta.
+# Ogni turno ricevi anche "lastTurn": cosa e' successo nel turno precedente.
 
 CICLO = ["fuoco", "erba", "elettro", "acqua"]
 
@@ -446,21 +453,22 @@ def moltiplicatore(tipo_mossa, tipo_difensore):
     d = (CICLO.index(tipo_difensore) - CICLO.index(tipo_mossa)) % 4
     if d == 1:
         return 2
-    if d == 3 or d == 0:
+    if d in (3, 0):
         return 0.5
     return 1
 
 
 def scegli(state):
     io = state["you"]["team"][state["you"]["active"]]
-    lui = state["opp"]["team"][state["opp"]["active"]]
     if state["phase"] == "replace" or io["hp"] <= 0:
         vivi = [i for i, m in enumerate(state["you"]["team"])
                 if m["hp"] > 0 and i != state["you"]["active"]]
         return ["cambia", vivi[0]]
-    danni = [m["power"] * moltiplicatore(m["type"], lui["type"])
-             for m in io["moves"]]
-    return ["attacca", danni.index(max(danni))]
+    lui = state["opp"]["active"]
+    # scegli l'attacco col miglior valore atteso (potenza * efficacia * precisione)
+    ev = [m["power"] * moltiplicatore(m["type"], lui["type"]) * m["accuracy"]
+          for m in io["moves"]]
+    return ["attacca", ev.index(max(ev))]
 
 
 while True:
@@ -472,7 +480,7 @@ while True:
     if state.get("winner") is not None:
         continue  # partita finita
     if state.get("phase") == "draft":
-        print(json.dumps({"team": [0, 4, 7]}))
+        print(json.dumps({"team": [0, 4, 7]}))  # fuoco, erba, elettro
     elif state.get("phase") in ("battle", "replace"):
         print(json.dumps({"move": scegli(state)}))
 `,

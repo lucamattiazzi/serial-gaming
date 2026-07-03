@@ -132,6 +132,11 @@
   opacity: 0.4;
 }
 
+.bench .bench-slot.unknown {
+  color: var(--text-dim);
+  background: repeating-linear-gradient(45deg, var(--bg-soft), var(--bg-soft) 4px, #12141c 4px, #12141c 8px);
+}
+
 .bench .bench-slot.in-field {
   border-color: var(--accent);
 }
