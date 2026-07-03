@@ -226,7 +226,8 @@ button.card:hover {
   font-size: 0.9rem;
 }
 
-#code {
+#code,
+#generated-carte {
   width: 100%;
   min-height: 420px;
   resize: vertical;
@@ -241,9 +242,30 @@ button.card:hover {
   tab-size: 4;
 }
 
-#code:focus {
+#code:focus,
+#generated-carte:focus {
   outline: none;
   border-color: var(--accent);
+}
+
+.cards-code {
+  margin-top: 1.25rem;
+}
+
+.cards-code h3 {
+  margin: 0 0 0.5rem;
+  font-size: 0.95rem;
+  color: var(--text-dim);
+}
+
+.cards-code h3 small {
+  font-weight: 400;
+  font-size: 0.8rem;
+}
+
+#generated-carte {
+  min-height: 260px;
+  font-size: 0.85rem;
 }
 
 /* ── Barra azioni e prova ────────────────────────────────── */

@@ -74,7 +74,8 @@
   <section id="level-carte" class="level" hidden>
     <p class="intro">Componi il tuo bot mettendo in fila le carte: si leggono dall'alto in
       basso e <strong>la prima che scatta decide la mossa</strong>. L'ordine è la strategia!
-      Se nessuna carta scatta, il bot gioca a caso.</p>
+      Se nessuna carta scatta, il bot gioca a caso. Poi, se vuoi, <strong>modifica a mano il
+        codice</strong> qui sotto: parti dalle carte e personalizzalo come preferisci.</p>
     <div class="cards-wrap">
       <div class="cards-col">
         <h3>Carte disponibili <small>(clicca per aggiungere)</small></h3>
@@ -85,10 +86,12 @@
         <ol id="cards-deck"></ol>
       </div>
     </div>
-    <details>
-      <summary>Guarda il codice MicroPython generato</summary>
-      <pre id="generated-carte"></pre>
-    </details>
+    <div class="cards-code">
+      <h3>Codice MicroPython
+        <small>(modificalo a piacere — attenzione: se cambi le carte viene riscritto)</small>
+      </h3>
+      <textarea id="generated-carte" spellcheck="false"></textarea>
+    </div>
   </section>
 
   <!-- ── BARRA AZIONI COMUNE ────────────────────────────────── -->

@@ -148,14 +148,18 @@ templateSelect.addEventListener('change', () => {
   codeArea.value = BOT_TEMPLATES[templateSelect.value]
 })
 
-// Tab nell'editor inserisce 4 spazi invece di cambiare campo
-codeArea.addEventListener('keydown', (event) => {
-  if (event.key !== 'Tab') return
-  event.preventDefault()
-  const { selectionStart, selectionEnd, value } = codeArea
-  codeArea.value = value.slice(0, selectionStart) + '    ' + value.slice(selectionEnd)
-  codeArea.selectionStart = codeArea.selectionEnd = selectionStart + 4
-})
+// Tab nelle textarea di codice inserisce 4 spazi invece di cambiare campo
+function enableTabIndent(textarea) {
+  textarea.addEventListener('keydown', (event) => {
+    if (event.key !== 'Tab') return
+    event.preventDefault()
+    const { selectionStart, selectionEnd, value } = textarea
+    textarea.value = value.slice(0, selectionStart) + '    ' + value.slice(selectionEnd)
+    textarea.selectionStart = textarea.selectionEnd = selectionStart + 4
+  })
+}
+enableTabIndent(codeArea)
+enableTabIndent(generatedCarte)
 
 // ── Livello Carte ────────────────────────────────────────────
 const decks = {} // gameId -> array di chiavi carta
@@ -219,7 +223,9 @@ function renderCards() {
     cardsDeck.innerHTML = '<p class="cards-empty">Mazzo vuoto: il bot giocherà sempre a caso. Aggiungi qualche carta!</p>'
   }
 
-  generatedCarte.textContent = cardsCode()
+  // riscrive il codice a partire dalle carte (le modifiche manuali vengono perse:
+  // è il comportamento voluto — le carte sono la fonte finché non le tocchi più)
+  generatedCarte.value = cardsCode()
 }
 
 // ── Il bot corrente (codice + gioco su cui provarlo) ─────────
@@ -229,7 +235,9 @@ function currentBot() {
     return { code: blocksCode(), gameId: currentGameId }
   }
   if (level === 'carte') {
-    return { code: cardsCode(), gameId: currentGameId }
+    // si usa ciò che è nell'area di codice: le carte lo generano, ma il bambino
+    // può averlo modificato a mano — in quel caso vince la sua versione
+    return { code: generatedCarte.value, gameId: currentGameId }
   }
   const template = templateSelect.value
   return {
