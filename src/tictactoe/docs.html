@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="it">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>API del tris — Serial Gaming</title>
+  <link rel="stylesheet" href="../style.css">
+</head>
+
+<body class="home">
+  <p><a href="./">&larr; Torna al gioco</a> · <a href="../">Home</a></p>
+
+  <header class="hero">
+    <h1>Tris — <span class="accent">API del bot</span></h1>
+    <p>Tutto quello che il tuo codice MicroPython deve sapere per giocare a tris
+      da un RP2040.</p>
+  </header>
+
+  <h2>Come funziona</h2>
+  <p>Il browser fa da arbitro e parla col tuo RP2040 sulla porta seriale USB
+    (<strong>115200 baud, 8N1</strong>). Il protocollo è a righe: ogni messaggio è un oggetto
+    JSON su una singola riga terminata da <code>\n</code>, in entrambe le direzioni. Dal punto
+    di vista del tuo codice: definisci <code>rispondi(state)</code> nel modulo
+    <code>bot_tictactoe.py</code>; a leggere la seriale e a stampare la tua risposta ci pensa
+    il <code>main.py</code> «router» installato dal Laboratorio.</p>
+  <p>Il ciclo di vita di una partita:</p>
+  <ol class="steps">
+    <li>
+      <strong>Attesa</strong>
+      <span>Il router gira in loop e legge righe da stdin; a ogni messaggio del tuo gioco
+        chiama la tua <code>rispondi(state)</code>. Tutto ciò che stampi e non è JSON valido
+        viene ignorato dall'arbitro (comodo per il debug).</span>
+    </li>
+    <li>
+      <strong>Il tuo turno</strong>
+      <span>Ricevi lo stato della partita. Rispondi con la tua mossa
+        <strong>entro 1 secondo</strong>, o perdi a tavolino.</span>
+    </li>
+    <li>
+      <strong>Fine partita</strong>
+      <span>Ricevi una notifica col vincitore. Non devi rispondere: puoi usarla per
+        imparare dal risultato.</span>
+    </li>
+  </ol>
+
+  <h2>La busta comune</h2>
+  <p>Ogni messaggio che ricevi contiene anche due campi di busta, omessi negli esempi di
+    questa pagina per brevità: <code>game</code> (qui <code>"tictactoe"</code>) e
+    <code>match</code>, un UUID che identifica la singola partita e resta identico dal primo
+    all'ultimo messaggio. All'inizio di ogni partita arriva inoltre un
+    <strong>annuncio</strong> con la sola busta e tutti i campi di gioco a <code>null</code>:
+    ignoralo (la tua <code>rispondi</code> ritorna <code>None</code>). È grazie alla busta che
+    il <code>main.py</code> «router» installato dal Laboratorio smista ogni messaggio al modulo
+    del gioco giusto (<code>bot_&lt;gioco&gt;.py</code>) — è ciò che rende possibile la
+    <a href="../torneo/">modalità torneo</a>.</p>
+  <pre><code>{"game": "tictactoe", "match": "3f2b1c4e-…", …campi del gioco…}</code></pre>
+
+  <h2>Sei sempre «O»</h2>
+  <p>Qualunque sia il tuo lato sulla scacchiera a video, <strong>il tuo simbolo nei messaggi è
+      sempre <code>"O"</code></strong> e l'avversario è sempre <code>"X"</code>: ci pensa
+    l'arbitro a rimappare i simboli prima di inviarteli (e nella notifica finale). Il tuo codice
+    non deve gestire il caso "gioco come X".</p>
+  <p>Attenzione però: <strong>puoi muovere per primo</strong> (ad esempio nella sfida al meglio
+    di 5, dove chi inizia è sorteggiato a ogni partita). In quel caso il primo messaggio che
+    ricevi ha la board completamente vuota e <code>lastMove</code> a <code>null</code>.</p>
+
+  <h2>Messaggio in ingresso: il tuo turno</h2>
+  <pre><code>{"board": ["X", "", "", "", "O", "", "", "", ""], "lastMove": 0, "winner": null}</code></pre>
+  <table>
+    <tr>
+      <th>Campo</th>
+      <th>Tipo</th>
+      <th>Significato</th>
+    </tr>
+    <tr>
+      <td><code>board</code></td>
+      <td>lista di 9 stringhe</td>
+      <td>Lo stato completo della scacchiera: ogni cella è <code>""</code> (vuota),
+        <code>"X"</code> (avversario) o <code>"O"</code> (tu).</td>
+    </tr>
+    <tr>
+      <td><code>lastMove</code></td>
+      <td>intero o <code>null</code></td>
+      <td>L'indice dell'ultima mossa dell'avversario; <code>null</code> se muovi per primo.
+        È ridondante rispetto a <code>board</code>, ma comodo.</td>
+    </tr>
+    <tr>
+      <td><code>winner</code></td>
+      <td><code>null</code></td>
+      <td>Sempre <code>null</code> quando è il tuo turno. Se non lo è, il messaggio è una
+        notifica di fine partita (vedi sotto).</td>
+    </tr>
+  </table>
+  <p>Gli indici della board vanno da 0 a 8, da sinistra a destra e dall'alto in basso:</p>
+  <pre><code> 0 | 1 | 2
+---+---+---
+ 3 | 4 | 5
+---+---+---
+ 6 | 7 | 8</code></pre>
+
+  <h2>La tua risposta</h2>
+  <pre><code>{"move": 6}</code></pre>
+  <p>Una sola riga JSON con l'indice della cella scelta. Le regole di arbitraggio:</p>
+  <ul class="rules">
+    <li><strong>Tempo massimo: 1 secondo</strong> dal momento in cui l'arbitro invia lo stato.
+      Nessuna risposta in tempo = sconfitta.</li>
+    <li><strong>Mossa non valida</strong> = sconfitta immediata: cella già occupata, indice
+      fuori da 0&ndash;8, valore non intero.</li>
+    <li>Righe che non sono JSON valido vengono ignorate (puoi stamparle per debug); la prima
+      riga JSON con un campo <code>move</code> è la tua risposta definitiva.</li>
+    <li>La disconnessione durante il tuo turno vale come sconfitta.</li>
+  </ul>
+
+  <h2>Messaggio in ingresso: fine partita</h2>
+  <pre><code>{"board": null, "lastMove": null, "winner": "O"}</code></pre>
+  <p><code>winner</code> vale <code>"O"</code> (hai vinto), <code>"X"</code> (hai perso) o
+    <code>"TIE"</code> (pareggio). Non rispondere: qualsiasi cosa stampi qui viene ignorata.
+    È il momento giusto per aggiornare la memoria di un bot che impara (guarda
+    <code>ai_map</code> nel repository).</p>
+
+  <h2>Sfida al meglio di 5</h2>
+  <p>Con due RP2040 (veri o emulati) l'arbitro può giocare una sfida: fino a 5 partite, vince
+    chi arriva prima a 3 vittorie, i pareggi non assegnano punti. Per il tuo codice non cambia
+    nulla: ogni partita è una normale sequenza di turni chiusa dalla sua notifica di fine
+    partita. Ricorda solo che <strong>chi muove per primo è sorteggiato a ogni
+      partita</strong>.</p>
+
+  <h2>Esempio completo</h2>
+  <pre><code>import random
+
+
+def next_move(board):
+    free = [i for i, cell in enumerate(board) if cell == ""]
+    return random.choice(free)
+
+
+def rispondi(state):
+    if state.get("winner") is not None:
+        return None  # partita finita: qui puoi imparare dal risultato
+    if state.get("board") is None:
+        return None  # annuncio di inizio partita
+    return {"move": next_move(state["board"])}</code></pre>
+
+  <h2>Consigli e debug</h2>
+  <ul class="rules">
+    <li>Con la console del browser aperta (F12) vedi tutto il traffico seriale: ogni riga che
+      il tuo bot stampa, anche il testo libero di debug.</li>
+    <li>Su MicroPython <code>json</code> e <code>ujson</code> sono equivalenti: usa
+      <code>json</code>, che funziona anche nell'emulatore.</li>
+    <li>Un secondo sul RP2040 è poco: l'esempio <code>ai_minmax</code> del repository rischia
+      di sforare sulle prime mosse. Precalcola quello che puoi.</li>
+    <li>Dopo la notifica di fine partita arriveranno altre partite: il router resta in ascolto
+      e richiamerà la tua <code>rispondi</code>.</li>
+  </ul>
+
+  <h2>Note sull'emulatore</h2>
+  <p>Il tipo di giocatore <em>«RP2040 emulato»</em> esegue il tuo codice nel browser con
+    Pyodide, senza hardware. Il protocollo è identico, con qualche differenza pratica:</p>
+  <ul class="rules">
+    <li>È <strong>CPython</strong>, non MicroPython: quasi tutto il codice da bot gira uguale,
+      ma i moduli hardware (<code>machine</code>, ecc.) non esistono.</li>
+    <li>Il programma viene <strong>rieseguito da capo a ogni messaggio</strong>: le variabili
+      non sopravvivono tra un turno e l'altro. Lo stato completo arriva comunque in ogni
+      messaggio; se ti serve persistenza (bot che imparano), scrivi su file — il filesystem
+      virtuale dura quanto la pagina.</li>
+    <li>Il limite di tempo è misurato sull'esecuzione del tuo codice. Un loop infinito che non
+      chiama <code>sys.stdin.readline()</code> blocca la pagina: se succede, ricarica.</li>
+  </ul>
+</body>
+
+</html>

@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="it">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Serial Gaming — sfide tra RP2040</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body class="home">
+  <header class="topbar">
+    <span class="brand">Serial <span class="accent">Gaming</span></span>
+    <nav>
+      <a href="#giochi" data-view="giochi">Giochi</a>
+      <a href="editor/">Laboratorio</a>
+      <a href="#spiegazione" data-view="spiegazione">Spiegazione</a>
+    </nav>
+  </header>
+
+  <!-- ── GIOCHI ─────────────────────────────────────────────── -->
+  <section id="view-giochi" class="view">
+    <header class="hero">
+      <h1>Serial <span class="accent">Gaming</span></h1>
+      <p>Scrivi un bot in MicroPython, caricalo sul tuo RP2040 e sfida un amico (o la CPU)
+        direttamente dal browser, via WebSerial.</p>
+    </header>
+
+    <div class="games">
+      <div class="game-card" data-game="tictactoe">
+        <span class="icon">#</span>
+        <h3>Tris</h3>
+        <p>Il classico. Perfetto per iniziare a scrivere il tuo primo bot.</p>
+        <a class="btn primary" href="tictactoe/">Gioca</a>
+      </div>
+      <div class="game-card" data-game="forza4">
+        <span class="icon">◎</span>
+        <h3>Forza 4</h3>
+        <p>Gravità e quattro in fila: qui il minimax si guadagna la pagnotta.</p>
+        <a class="btn primary" href="forza4/">Gioca</a>
+      </div>
+      <div class="game-card" data-game="morra">
+        <span class="icon">✊</span>
+        <h3>Morra cinese</h3>
+        <p>20 round simultanei: vince chi legge i pattern dell'avversario.</p>
+        <a class="btn primary" href="morra/">Gioca</a>
+      </div>
+      <div class="game-card" data-game="pong">
+        <span class="icon">▐ ●</span>
+        <h3>Pong</h3>
+        <p>Tempo reale: 10 stati al secondo, riflessi e previsione dei rimbalzi.</p>
+        <a class="btn primary" href="pong/">Gioca</a>
+      </div>
+      <div class="game-card" data-game="tron">
+        <span class="icon">⌐¬</span>
+        <h3>Tron</h3>
+        <p>Scie luminose e territorio: l'ultimo vivo vince.</p>
+        <a class="btn primary" href="tron/">Gioca</a>
+      </div>
+      <div class="game-card" data-game="navale">
+        <span class="icon">⚓</span>
+        <h3>Battaglia navale</h3>
+        <p>Informazione nascosta: piazzamento, caccia e mappe di probabilità.</p>
+        <a class="btn primary" href="navale/">Gioca</a>
+      </div>
+      <div class="game-card" data-game="racetrack">
+        <span class="icon">🏁</span>
+        <h3>Racetrack</h3>
+        <p>Corsa vettoriale: accelera, pianifica la frenata, non uscire di pista.</p>
+        <a class="btn primary" href="racetrack/">Gioca</a>
+      </div>
+      <div class="game-card" data-game="arena">
+        <span class="icon">🦊</span>
+        <h3>Arena dei Mostri</h3>
+        <p>Draft, tipi in ciclo e cambi al momento giusto: sei l'allenatore.</p>
+        <a class="btn primary" href="arena/">Gioca</a>
+      </div>
+      <div class="game-card" data-game="chess">
+        <span class="icon">♞</span>
+        <h3>Scacchi</h3>
+        <p>Il tuo bot reggerà una partita intera su un RP2040?</p>
+        <a class="btn primary" href="chess/">Gioca</a>
+      </div>
+      <div class="game-card" data-game="torneo">
+        <span class="icon">🏆</span>
+        <h3>Torneo</h3>
+        <p>3 giochi a sorte, vince chi ne prende 2. Il giudizio universale dei bot.</p>
+        <a class="btn primary" href="torneo/">Sfida</a>
+      </div>
+    </div>
+
+    <p class="note">Prima volta qui? Leggi la <a href="#spiegazione">spiegazione</a>, poi
+      costruisci il tuo bot nel <a href="editor/">Laboratorio</a> — a blocchi o in Python —
+      provalo contro la CPU e caricalo sul Pico senza uscire dal browser. Ogni gioco ha la sua
+      pagina «API per il bot» con protocollo, esempio funzionante e consigli.</p>
+  </section>
+
+  <!-- ── SPIEGAZIONE ────────────────────────────────────────── -->
+  <section id="view-spiegazione" class="view" hidden>
+    <h2 class="view-title">Come funziona tutto</h2>
+    <p class="intro">Ogni giocatore scrive la propria AI in MicroPython, la carica su un
+      Raspberry Pi Pico (RP2040) e lo collega via USB: il browser fa da arbitro e parla col
+      bot sulla porta seriale.</p>
+
+    <h2>In tre passi</h2>
+    <ol class="steps">
+      <li>
+        <strong>Scrivi il tuo bot</strong>
+        <span>In MicroPython: un modulo con una funzione <code>rispondi(state)</code> che
+          riceve lo stato del gioco e ritorna la mossa. Al traffico seriale (JSON su stdin e
+          stdout) pensa il router.</span>
+      </li>
+      <li>
+        <strong>Caricalo sul Pico</strong>
+        <span>Dal <a href="editor/">Laboratorio</a>, direttamente dal browser: l'upload
+          installa il router (<code>main.py</code>) e salva il bot come
+          <code>bot_&lt;gioco&gt;.py</code> — un bot per gioco, tutti sullo stesso Pico.
+          In alternativa copia i file a mano con Thonny o <code>mpremote</code>.</span>
+      </li>
+      <li>
+        <strong>Collega e sfida</strong>
+        <span>Apri il gioco con Chrome o Edge, collega il Pico via USB, premi
+          &ldquo;Connetti&rdquo; e inizia la partita.</span>
+      </li>
+    </ol>
+
+    <h2>Le regole</h2>
+    <ul class="rules">
+      <li>La piattaforma è un <strong>RP2040</strong>: il tuo bot deve girare lì sopra, con i
+        suoi limiti di memoria e di velocità.</li>
+      <li>Ogni mossa ha un limite di tempo (lo trovi nella documentazione di ciascun gioco):
+        <strong>1 secondo</strong> per il tris e gli scacchi, un po' di più per gli altri. Se
+        il bot non risponde in tempo, perde la partita.</li>
+      <li>Una <strong>mossa non valida</strong> (casella occupata, mossa illegale, JSON
+        malformato) vale come sconfitta immediata.</li>
+      <li>Puoi giocare <strong>1 vs 1</strong> (il tuo Pico contro quello di un amico,
+        entrambi collegati allo stesso computer) oppure <strong>1 vs CPU</strong> per allenare
+        il tuo bot contro l'avversario integrato nel browser.</li>
+      <li>Con due RP2040 collegati potete lanciare la <strong>sfida al meglio di 5</strong>:
+        chi inizia (o chi ha il Bianco) viene sorteggiato a ogni partita.</li>
+      <li data-requires-emulator>Niente hardware sottomano? Scegli <strong>«RP2040
+          emulato»</strong> nella pagina del gioco: scrivi il codice lì e viene eseguito nel
+        browser (Pyodide). Perfetto per sviluppare il bot prima di caricarlo sul Pico vero.</li>
+    </ul>
+
+    <div data-game="torneo">
+      <h2>La busta comune e il torneo</h2>
+      <p>Ogni messaggio che il tuo bot riceve contiene due campi di busta: <code>game</code>
+        (l'identificatore del gioco) e <code>match</code> (un UUID che identifica la singola
+        partita, identico dal primo all'ultimo messaggio). All'inizio di ogni partita arriva un
+        <strong>annuncio</strong> con la sola busta e i campi di gioco a <code>null</code>: va
+        ignorato. Grazie alla busta il <code>main.py</code> «router» installato dal <a
+          href="editor/">Laboratorio</a> smista ogni messaggio al bot del gioco giusto
+        (<code>bot_&lt;gioco&gt;.py</code>): sullo stesso RP2040 convivono i bot di tutti i
+        giochi, e ogni upload sostituisce solo quello del gioco scelto.</p>
+      <p>È ciò che serve per la <a href="torneo/"><strong>modalità torneo</strong></a>: si
+        collegano due RP2040, si sorteggiano <strong>3 giochi</strong> dal pool scelto, e vince
+        il bot che ne porta a casa 2 (in caso di parità, spareggio). Basta caricare dal
+        Laboratorio un bot per ciascun gioco del pool.</p>
+    </div>
+
+    <h2>Il protocollo — tris <small>(<a href="tictactoe/docs.html">documentazione completa</a>)</small></h2>
+    <p>A ogni tuo turno ricevi una riga JSON. <strong>Il tuo simbolo è sempre
+        <code>"O"</code></strong>, anche se sulla scacchiera a video giochi come X: ci pensa il
+      browser a rimappare i simboli.</p>
+    <pre><code>{"board": ["X", "", "", "", "O", "", "", "", ""], "lastMove": 0, "winner": null}</code></pre>
+    <p>Rispondi con l'indice della casella scelta (0&ndash;8, da sinistra a destra, dall'alto
+      in basso):</p>
+    <pre><code>{"move": 6}</code></pre>
+    <p>A fine partita ricevi una notifica con il vincitore (utile per i bot che imparano, come
+      <code>ai_map</code>):</p>
+    <pre><code>{"board": null, "lastMove": null, "winner": "O"}</code></pre>
+
+    <p>Un bot minimo, giusto per partire — un modulo <code>bot_tictactoe.py</code> con una
+      funzione <code>rispondi(state)</code>; a leggere la seriale ci pensa il router:</p>
+    <pre><code>def rispondi(state):
+    if state["winner"] is not None:
+        return None  # partita finita
+    if state["board"] is None:
+        return None  # annuncio di inizio partita
+    move = state["board"].index("")  # prima casella libera
+    return {"move": move}</code></pre>
+
+    <p class="note">Nel repository trovi tre bot di esempio in <code>examples/tictactoe/</code>:
+      <code>ai_random</code> (mosse casuali), <code>ai_minmax</code> (minimax a profondità
+      limitata) e <code>ai_map</code> (impara dalle partite giocate). Occhio: con il limite a 1
+      secondo, un minimax troppo lento sul RP2040 perde a tavolino.</p>
+
+    <div data-game="pong">
+      <h2>Il protocollo — pong <small>(<a href="pong/docs.html">documentazione completa</a>)</small></h2>
+      <p>Il primo gioco in tempo reale: niente turni, ricevi lo stato del campo ~10 volte al
+        secondo e rispondi con la direzione della racchetta (<code>-1</code> su, <code>0</code>
+        ferma, <code>1</code> giù). Sei sempre la racchetta <strong>sinistra</strong>: per chi
+        gioca a destra l'arbitro specchia il campo. Primo a 5 punti; un bot muto per più di 3
+        secondi perde.</p>
+      <pre><code>{"field": {"w": 100, "h": 60}, "ball": {"x": 62.4, "y": 18.7, "vx": -38.2, "vy": 11.9}, "you": {"y": 30.0, "h": 12}, "opp": {"y": 24.5, "h": 12}, "score": {"you": 2, "opp": 1}, "winner": null}</code></pre>
+      <pre><code>{"move": -1}</code></pre>
+    </div>
+
+    <h2>Gli altri giochi</h2>
+    <p>Stesso trasporto (righe JSON sulla seriale), regole d'arbitraggio nello stesso spirito.
+      Ogni gioco ha la sua pagina di documentazione con protocollo completo, esempio
+      funzionante e consigli:</p>
+    <ul class="rules">
+      <li><strong>Forza 4</strong> — protocollo gemello del tris su griglia 7×6, 2 secondi a
+        mossa. <a href="forza4/docs.html">Documentazione</a>.</li>
+      <li><strong>Morra cinese</strong> — 20 round a mosse simultanee con la storia completa
+        nel messaggio: vince chi legge i pattern dell'avversario.
+        <a href="morra/docs.html">Documentazione</a>.</li>
+      <li data-game="tron"><strong>Tron</strong> — tempo reale a tick come il pong: griglia,
+        scie, flood fill. <a href="tron/docs.html">Documentazione</a>.</li>
+      <li><strong>Battaglia navale</strong> — informazione nascosta: piazzi la flotta, poi
+        caccia a colpi alterni con la storia dei tuoi colpi nel messaggio.
+        <a href="navale/docs.html">Documentazione</a>.</li>
+      <li data-game="racetrack"><strong>Racetrack</strong> — corsa vettoriale a turni
+        simultanei: accelerazioni ±1, frenate da pianificare, uscire di pista = sconfitta.
+        <a href="racetrack/docs.html">Documentazione</a>.</li>
+      <li data-game="arena"><strong>Arena dei Mostri</strong> — draft di 3 mostri e battaglia a
+        scelte simultanee: tipi in ciclo, velocità e cambi al momento giusto, zero casualità.
+        <a href="arena/docs.html">Documentazione</a>.</li>
+    </ul>
+
+    <h2>Il protocollo — scacchi <small>(<a href="chess/docs.html">documentazione completa</a>)</small></h2>
+    <p>Stessa logica del tris, ma lo stato è il <a
+        href="https://it.wikipedia.org/wiki/Notazione_Forsyth-Edwards">FEN</a> della posizione:
+      da lì ricavi anche di chi è il turno, cioè il tuo colore (ti interroghiamo solo quando
+      tocca a te).</p>
+    <pre><code>{"fen": "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", "lastMove": null, "winner": null}</code></pre>
+    <p>Rispondi con la mossa in notazione <em>casella di partenza + casella di arrivo</em>
+      (promozione con lettera finale, es. <code>e7e8q</code>). Una mossa illegale vale
+      sconfitta: generare mosse legali su un RP2040 è la parte difficile — e il bello del
+      gioco.</p>
+    <pre><code>{"move": "e2e4"}</code></pre>
+    <p>A fine partita: <code>{"fen": null, "lastMove": null, "winner": "w" | "b" | "TIE"}</code>.</p>
+  </section>
+
+  <script src="config.js"></script>
+  <script src="home.js"></script>
+</body>
+
+</html>

@@ -8,16 +8,22 @@ toolchain **npm + Vite + React** che produce un sito **interamente statico**
 ## Stato attuale (tappa 1)
 
 Aggiunto in modo **non distruttivo**: il sito vanilla continua a funzionare
-esattamente come prima. In parallelo c'è ora un progetto Vite:
+come prima. In parallelo c'è il progetto Vite, e **tutto il sorgente vive in
+`src/`** (che è anche la `root` di Vite):
 
 - `package.json`, `vite.config.js` — toolchain e build multi-pagina.
-- `app.html` + `src/` — la **home in React** (griglia dei giochi + spiegazione),
-  che rispetta i flag di `src/siteConfig.js` (giochi nascosti).
+- `src/` — tutto il sito: pagine di gioco (`src/<gioco>/`), Laboratorio
+  (`src/editor/`), file condivisi (`src/picoserial.js`, `src/style.css`, …),
+  home vanilla (`src/index.html`) e home React (`src/app.html` + `src/home/`),
+  che rispetta i flag di `src/home/siteConfig.js`.
+- `examples/` — i bot MicroPython di esempio (non fanno parte del sito).
 - Le **pagine di gioco restano quelle esistenti** (motori già collaudati:
   canvas, WebSerial, Pyodide, Blockly). Vite le impacchetta come entry statiche
   senza riscriverle.
 
-`vite build` genera `dist/` con la home React + tutte le pagine di gioco.
+`vite build` genera `dist/` con le due home, tutte le pagine di gioco e le
+relative pagine di documentazione. Senza toolchain il sito si serve ancora
+statico: `python3 -m http.server` **da dentro `src/`**.
 
 ## Comandi (richiede Node ≥ 18)
 
@@ -28,20 +34,13 @@ npm run build    # sito statico in dist/
 npm run preview  # anteprima della build
 ```
 
-> ⚠️ Questi file **non sono stati compilati né provati** nell'ambiente in cui
-> sono stati scritti (Node non installato). Al primo `npm install && npm run dev`
-> vanno verificati: (a) che le pagine di gioco classiche (script non-modulo con
-> variabili globali condivise tra file) vengano servite/impacchettate
-> correttamente da Vite; (b) il caricamento degli asset relativi
-> (`../style.css`, `../picoserial.js`, ecc.) nella build.
-
 ## Prossime tappe
 
-1. Sostituire `index.html` (home vanilla) con `app.html` (home React), oppure
-   rinominare `app.html` → `index.html` una volta verificata la build.
-2. Unificare la configurazione: far leggere a `config.js` (pagine classiche) e a
-   `src/siteConfig.js` (React) un'unica fonte, oppure convertire le pagine di
-   gioco perché importino il modulo ESM.
+1. Sostituire `src/index.html` (home vanilla) con `src/app.html` (home React),
+   oppure rinominare `app.html` → `index.html` una volta verificata la build.
+2. Unificare la configurazione: far leggere a `src/config.js` (pagine classiche)
+   e a `src/home/siteConfig.js` (React) un'unica fonte, oppure convertire le
+   pagine di gioco perché importino il modulo ESM.
 3. Portare i giochi in React uno alla volta (a scelta): estrarre il motore puro
    di ogni gioco (già isolato e testato con gli harness JXA) e avvolgerlo in un
    componente React che gestisce solo la UI. I test di logica restano validi.

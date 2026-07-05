@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="it">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>API di Forza 4 — Serial Gaming</title>
+  <link rel="stylesheet" href="../style.css">
+</head>
+
+<body class="home">
+  <p><a href="./">&larr; Torna al gioco</a> · <a href="../">Home</a></p>
+
+  <header class="hero">
+    <h1>Forza 4 — <span class="accent">API del bot</span></h1>
+    <p>Stesso protocollo del tris, griglia 7×6, gravità e quattro in fila.</p>
+  </header>
+
+  <h2>Come funziona</h2>
+  <p>Identico al tris: righe JSON sulla seriale USB (115200 baud, 8N1), l'arbitro ti interroga
+    al tuo turno e tu rispondi con la mossa. <strong>Sei sempre <code>"O"</code></strong>,
+    l'avversario è sempre <code>"X"</code> (ci pensa l'arbitro a rimappare), e
+    <strong>puoi muovere per primo</strong> — nella sfida al meglio di 5 chi inizia è
+    sorteggiato a ogni partita.</p>
+
+  <h2>La busta comune</h2>
+  <p>Ogni messaggio che ricevi contiene anche due campi di busta, omessi negli esempi di
+    questa pagina per brevità: <code>game</code> (qui <code>"forza4"</code>) e
+    <code>match</code>, un UUID che identifica la singola partita e resta identico dal primo
+    all'ultimo messaggio. All'inizio di ogni partita arriva inoltre un
+    <strong>annuncio</strong> con la sola busta e tutti i campi di gioco a <code>null</code>:
+    ignoralo (la tua <code>rispondi</code> ritorna <code>None</code>). È grazie alla busta che
+    il <code>main.py</code> «router» installato dal Laboratorio smista ogni messaggio al modulo
+    del gioco giusto (<code>bot_&lt;gioco&gt;.py</code>) — è ciò che rende possibile la
+    <a href="../torneo/">modalità torneo</a>.</p>
+  <pre><code>{"game": "forza4", "match": "3f2b1c4e-…", …campi del gioco…}</code></pre>
+
+  <h2>Messaggio in ingresso: il tuo turno</h2>
+  <pre><code>{"board": ["", "", ..., "X", "O", "X"], "lastMove": 3, "winner": null}</code></pre>
+  <table>
+    <tr>
+      <th>Campo</th>
+      <th>Significato</th>
+    </tr>
+    <tr>
+      <td><code>board</code></td>
+      <td>42 celle (<code>""</code>, <code>"X"</code>, <code>"O"</code>), <strong>riga 0 in
+          alto</strong>, indice = <code>riga * 7 + colonna</code>. La colonna
+        <code>c</code> è piena quando <code>board[c] != ""</code> (la cella in cima).</td>
+    </tr>
+    <tr>
+      <td><code>lastMove</code></td>
+      <td>La colonna dell'ultima mossa avversaria, <code>null</code> se apri tu.</td>
+    </tr>
+    <tr>
+      <td><code>winner</code></td>
+      <td><code>null</code> al tuo turno; <code>"O"</code>/<code>"X"</code>/<code>"TIE"</code>
+        nella notifica di fine partita (a cui non devi rispondere).</td>
+    </tr>
+  </table>
+
+  <h2>La tua risposta</h2>
+  <pre><code>{"move": 3}</code></pre>
+  <p>L'indice della colonna (0&ndash;6) in cui far cadere il tuo disco: finisce nella cella
+    libera più in basso. Le regole:</p>
+  <ul class="rules">
+    <li><strong>Tempo massimo: 2 secondi</strong>. Nessuna risposta = sconfitta.</li>
+    <li><strong>Colonna piena o fuori da 0&ndash;6</strong> = sconfitta immediata.</li>
+    <li>Righe non JSON ignorate (comode per il debug via console del browser).</li>
+    <li>Disconnessione durante il tuo turno = sconfitta.</li>
+  </ul>
+
+  <h2>Esempio completo</h2>
+  <pre><code>import random
+
+COLS = 7
+
+
+def next_move(board):
+    valid = [c for c in range(COLS) if board[c] == ""]
+    return random.choice(valid)
+
+
+def rispondi(state):
+    if state.get("winner") is not None:
+        return None  # partita finita
+    if state.get("board") is None:
+        return None  # annuncio di inizio partita
+    return {"move": next_move(state["board"])}</code></pre>
+
+  <h2>Consigli</h2>
+  <ul class="rules">
+    <li>Forza 4 premia la ricerca: un minimax con potatura alpha-beta e una buona euristica
+      (finestre da 4, preferenza per il centro) domina i bot reattivi. Ma 2 secondi
+      sull'RP2040 sono pochi: misura la profondità che ti puoi permettere.</li>
+    <li>Controlla sempre prima le vittorie immediate tue e le minacce immediate avversarie:
+      costa poco e evita le figuracce.</li>
+    <li>Per l'emulatore valgono le solite note: CPython, programma rieseguito a ogni
+      messaggio, stato persistente solo su file.</li>
+  </ul>
+</body>
+
+</html>

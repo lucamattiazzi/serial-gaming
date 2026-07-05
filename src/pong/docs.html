@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="it">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>API del pong — Serial Gaming</title>
+  <link rel="stylesheet" href="../style.css">
+</head>
+
+<body class="home">
+  <p><a href="./">&larr; Torna al gioco</a> · <a href="../">Home</a></p>
+
+  <header class="hero">
+    <h1>Pong — <span class="accent">API del bot</span></h1>
+    <p>Il primo gioco in tempo reale: niente turni, un flusso di stati a cui rispondere
+      al volo.</p>
+  </header>
+
+  <h2>Come funziona</h2>
+  <p>A differenza di tris e scacchi, il pong non è a turni: la fisica gira nel browser a 60 fps
+    e il tuo bot riceve lo stato del campo <strong>circa 10 volte al secondo</strong> (una riga
+    JSON per stato, seriale USB a 115200 baud, 8N1). A ogni stato puoi rispondere con la
+    direzione della racchetta: la direzione <strong>resta attiva finché non ne mandi
+      un'altra</strong>, quindi non devi per forza rispondere a ogni messaggio — ma un bot che
+    tace troppo a lungo perde (vedi le regole).</p>
+  <p>La partita è al meglio dei punti: <strong>vince chi arriva primo a 5</strong>. Dopo ogni
+    punto c'è una breve pausa e il servizio va a chi lo ha subìto.</p>
+
+  <h2>La busta comune</h2>
+  <p>Ogni messaggio che ricevi contiene anche due campi di busta, omessi negli esempi di
+    questa pagina per brevità: <code>game</code> (qui <code>"pong"</code>) e
+    <code>match</code>, un UUID che identifica la singola partita e resta identico dal primo
+    all'ultimo messaggio. All'inizio di ogni partita arriva inoltre un
+    <strong>annuncio</strong> con la sola busta e tutti i campi di gioco a <code>null</code>:
+    ignoralo (la tua <code>rispondi</code> ritorna <code>None</code>). È grazie alla busta che
+    il <code>main.py</code> «router» installato dal Laboratorio smista ogni messaggio al modulo
+    del gioco giusto (<code>bot_&lt;gioco&gt;.py</code>) — è ciò che rende possibile la
+    <a href="../torneo/">modalità torneo</a>.</p>
+  <pre><code>{"game": "pong", "match": "3f2b1c4e-…", …campi del gioco…}</code></pre>
+
+  <h2>Sei sempre la racchetta sinistra</h2>
+  <p>Come nel tris «sei sempre O», qui <strong>il tuo bot si vede sempre come racchetta
+      sinistra</strong>: per il giocatore di destra l'arbitro specchia le coordinate
+    (<code>x</code> e <code>vx</code>) prima di inviarle. Il tuo codice non deve gestire il caso
+    "gioco a destra": la palla con <code>vx &lt; 0</code> viene sempre verso di te.</p>
+
+  <h2>Messaggio in ingresso: lo stato</h2>
+  <pre><code>{"field": {"w": 100, "h": 60},
+ "ball": {"x": 62.4, "y": 18.75, "vx": -38.2, "vy": 11.9},
+ "you": {"y": 30.0, "h": 12},
+ "opp": {"y": 24.5, "h": 12},
+ "score": {"you": 2, "opp": 1},
+ "winner": null}</code></pre>
+  <table>
+    <tr>
+      <th>Campo</th>
+      <th>Significato</th>
+    </tr>
+    <tr>
+      <td><code>field</code></td>
+      <td>Dimensioni del campo in unità logiche: origine in alto a sinistra, <code>x</code>
+        cresce verso destra (l'avversario), <code>y</code> cresce verso il basso.</td>
+    </tr>
+    <tr>
+      <td><code>ball</code></td>
+      <td>Posizione e velocità della palla (unità al secondo). <code>vx &lt; 0</code> = la
+        palla viene verso di te. A ogni rimbalzo su una racchetta accelera un po'.</td>
+    </tr>
+    <tr>
+      <td><code>you</code></td>
+      <td>La tua racchetta: <code>y</code> è il centro, <code>h</code> l'altezza. La faccia è
+        a <code>x = 5</code>.</td>
+    </tr>
+    <tr>
+      <td><code>opp</code></td>
+      <td>La racchetta avversaria (faccia a <code>x = 95</code>).</td>
+    </tr>
+    <tr>
+      <td><code>score</code></td>
+      <td>Punteggio corrente, dal tuo punto di vista.</td>
+    </tr>
+    <tr>
+      <td><code>winner</code></td>
+      <td>Sempre <code>null</code> durante il gioco; a fine partita arriva un ultimo messaggio
+        con <code>"you"</code> o <code>"opp"</code> (e gli altri campi a <code>null</code>).</td>
+    </tr>
+  </table>
+
+  <h2>La tua risposta</h2>
+  <pre><code>{"move": -1}</code></pre>
+  <p>Una riga JSON con la direzione: <code>-1</code> su (verso <code>y</code> piccole),
+    <code>0</code> ferma, <code>1</code> giù. La racchetta si muove a velocità costante nella
+    direzione comandata finché non la cambi. Le regole di arbitraggio:</p>
+  <ul class="rules">
+    <li><strong>Silenzio massimo: 3 secondi.</strong> Se non arriva nessuna tua risposta per
+      così tanto, perdi la partita (le pause dopo i punti non contano).</li>
+    <li><strong>Valore non valido</strong> (diverso da -1, 0, 1) = sconfitta immediata.</li>
+    <li>Righe non JSON vengono ignorate: puoi stamparle per debug (ma vedi i consigli sul
+      restare al passo).</li>
+    <li>La disconnessione a partita in corso vale come sconfitta.</li>
+  </ul>
+
+  <h2>Esempio completo</h2>
+  <pre><code>def next_move(state):
+    ball_y = state["ball"]["y"]
+    my_y = state["you"]["y"]
+    if ball_y &lt; my_y - 1:
+        return -1
+    if ball_y &gt; my_y + 1:
+        return 1
+    return 0
+
+
+def rispondi(state):
+    if state.get("winner") is not None:
+        return None  # partita finita
+    if state.get("ball") is None:
+        return None  # annuncio di inizio partita
+    return {"move": next_move(state)}</code></pre>
+  <p>Questo bot «segue la palla» ed è già dignitoso. Il salto di qualità è
+    <strong>predire dove arriverà la palla</strong>: con posizione e velocità puoi calcolare il
+    punto d'impatto sul tuo piano, riflettendo la traiettoria sui bordi alto e basso — e
+    piazzarti lì con calma invece di inseguire.</p>
+
+  <h2>Resta al passo</h2>
+  <ul class="rules">
+    <li>Gli stati arrivano ogni ~100 ms: il tuo ciclo <em>leggi&nbsp;→&nbsp;decidi&nbsp;→
+        rispondi</em> deve stare comodamente sotto quella soglia, o giocherai sempre su uno
+      stato vecchio (le righe si accodano sulla seriale).</li>
+    <li>Se il tuo calcolo è lento, falla semplice: rispondere in ritardo è peggio che
+      rispondere in modo stupido.</li>
+    <li>Su MicroPython puoi scartare gli stati arretrati leggendo tutte le righe disponibili
+      con <code>select.poll</code> su <code>sys.stdin</code> e tenendo solo l'ultima.</li>
+    <li>Con due RP2040 (veri o emulati) c'è la <strong>sfida al meglio di 5</strong> partite:
+      per il bot non cambia nulla, ogni partita finisce col suo messaggio
+      <code>winner</code>.</li>
+  </ul>
+
+  <h2>Note sull'emulatore</h2>
+  <ul class="rules">
+    <li>Vale tutto quanto detto per gli altri giochi: CPython, niente moduli hardware, il
+      programma viene <strong>rieseguito a ogni messaggio</strong> (qui ~10 volte al secondo:
+      tieni leggerissima l'inizializzazione a livello di modulo).</li>
+    <li>Un'esecuzione che supera il limite di silenzio blocca la pagina e perde: se serve,
+      ricarica.</li>
+  </ul>
+</body>
+
+</html>

@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="it">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Forza 4 — Serial Gaming</title>
+  <link rel="stylesheet" href="../style.css">
+  <link rel="stylesheet" href="../game.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body class="game-page">
+  <header>
+    <a class="back" href="../">&larr; Home</a>
+    <h1><span class="game-icon">🔴</span> Forza 4</h1>
+    <a class="api-link" href="docs.html">API per il bot</a>
+  </header>
+
+  <section id="setup">
+    <div class="player-card" id="card-X">
+      <h2><span class="disc disc-x"></span> Giocatore X</h2>
+      <select id="type-X" aria-label="Tipo giocatore X">
+        <option value="human" selected>Umano</option>
+        <option value="pico">RP2040 (seriale)</option>
+        <option value="emu">RP2040 emulato (Python nel browser)</option>
+        <option value="cpu-random">CPU facile</option>
+        <option value="cpu-minimax">CPU difficile</option>
+      </select>
+      <div class="conn-row" id="conn-row-X" hidden>
+        <button id="connect-X" class="btn connect">🔌 Connetti RP2040</button>
+        <span class="conn-status" id="conn-X">non connesso</span>
+      </div>
+      <div class="emu-row" id="emu-row-X" hidden>
+        <textarea id="emu-code-X" class="emu-code" spellcheck="false"></textarea>
+        <div class="conn-row">
+          <button id="emu-start-X" class="btn small">Avvia bot</button>
+          <span class="conn-status" id="emu-status-X">non avviato</span>
+        </div>
+      </div>
+    </div>
+
+    <span class="vs">vs</span>
+
+    <div class="player-card" id="card-O">
+      <h2><span class="disc disc-o"></span> Giocatore O</h2>
+      <select id="type-O" aria-label="Tipo giocatore O">
+        <option value="human">Umano</option>
+        <option value="pico" selected>RP2040 (seriale)</option>
+        <option value="emu">RP2040 emulato (Python nel browser)</option>
+        <option value="cpu-random">CPU facile</option>
+        <option value="cpu-minimax">CPU difficile</option>
+      </select>
+      <div class="conn-row" id="conn-row-O">
+        <button id="connect-O" class="btn connect">🔌 Connetti RP2040</button>
+        <span class="conn-status" id="conn-O">non connesso</span>
+      </div>
+      <div class="emu-row" id="emu-row-O" hidden>
+        <textarea id="emu-code-O" class="emu-code" spellcheck="false"></textarea>
+        <div class="conn-row">
+          <button id="emu-start-O" class="btn small">Avvia bot</button>
+          <span class="conn-status" id="emu-status-O">non avviato</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <label class="series-row" id="series-row" hidden>
+    <input type="checkbox" id="series-toggle" checked>
+    Sfida al meglio di 5 (si parte a turni casuali)
+  </label>
+
+  <div class="actions">
+    <button id="start-button" class="btn primary">Inizia partita</button>
+  </div>
+
+  <p id="series-score" hidden></p>
+
+  <div id="timer" class="idle">
+    <div id="timer-fill"></div>
+    <span id="timer-text"></span>
+  </div>
+
+  <div id="game-board" class="idle"></div>
+
+  <p id="status-display">Scegli i giocatori e inizia la partita.</p>
+
+  <script src="../picoserial.js"></script>
+  <script src="../bot-templates.js"></script>
+  <script src="../emupico.js"></script>
+  <script src="../config.js"></script>
+  <script src="../botname.js"></script>
+  <script src="script.js"></script>
+</body>
+
+</html>

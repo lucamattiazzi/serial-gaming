@@ -1,0 +1,583 @@
+// ── Configurazione ───────────────────────────────────────────
+const MOVE_TIME_LIMIT_MS = 1000 // tempo massimo per mossa di un RP2040, pena sconfitta
+const HUMAN_TIME_LIMIT_MS = 10000 // tempo massimo per mossa di un umano
+const CPU_MOVE_DELAY_MS = 400   // pausa estetica prima della mossa della CPU
+const SERIES_GAMES = 5          // partite della sfida tra due RP2040
+const SERIES_TARGET = 3         // vittorie che chiudono la sfida in anticipo
+const SERIES_PAUSE_MS = 2000    // pausa tra una partita e l'altra della sfida
+
+const PLAYER_TYPES = {
+  HUMAN: 'human',
+  PICO: 'pico',
+  EMU: 'emu',
+  CPU_RANDOM: 'cpu-random',
+  CPU_PERFECT: 'cpu-perfect',
+}
+
+// vero RP2040 o emulato: stesso protocollo, stesso limite di tempo
+function isPicoLike(type) {
+  return type === PLAYER_TYPES.PICO || type === PLAYER_TYPES.EMU
+}
+
+const WIN_TRIPLETS = [
+  [0, 1, 2], [3, 4, 5], [6, 7, 8],
+  [0, 3, 6], [1, 4, 7], [2, 5, 8],
+  [0, 4, 8], [2, 4, 6],
+]
+
+// ── Elementi DOM ─────────────────────────────────────────────
+const statusDisplay = document.getElementById('status-display')
+const gameBoard = document.getElementById('game-board')
+const startButton = document.getElementById('start-button')
+const seriesRow = document.getElementById('series-row')
+const seriesToggle = document.getElementById('series-toggle')
+const seriesScore = document.getElementById('series-score')
+const timerEl = document.getElementById('timer')
+const timerFill = document.getElementById('timer-fill')
+const timerText = document.getElementById('timer-text')
+
+// ── Stato di gioco ───────────────────────────────────────────
+const players = {
+  X: { type: PLAYER_TYPES.HUMAN, serial: null, pendingResolve: null },
+  O: { type: PLAYER_TYPES.PICO, serial: null, pendingResolve: null },
+}
+
+const board = Array(9).fill('')
+let gameActive = false
+let gamePlayed = false
+let currentSymbol = 'X'
+let lastMoveIndex = null
+let waitingHuman = false
+let timerInterval = null
+let humanTimeout = null
+let series = null // { score: {X, O}, game: n } durante una sfida al meglio di 5
+const cells = []
+
+// ── Setup giocatori ──────────────────────────────────────────
+for (const symbol of ['X', 'O']) {
+  const typeSelect = document.getElementById(`type-${symbol}`)
+  const connectRow = document.getElementById(`conn-row-${symbol}`)
+  const connectButton = document.getElementById(`connect-${symbol}`)
+  const emuRow = document.getElementById(`emu-row-${symbol}`)
+
+  document.getElementById(`emu-code-${symbol}`).value = BOT_TEMPLATES.tictactoe
+
+  typeSelect.addEventListener('change', () => {
+    const player = players[symbol]
+    if (player.serial) {
+      if (player.serial instanceof PicoSerial) player.serial.disconnect()
+      player.serial = null
+    }
+    player.type = typeSelect.value
+    connectRow.hidden = typeSelect.value !== PLAYER_TYPES.PICO
+    emuRow.hidden = typeSelect.value !== PLAYER_TYPES.EMU
+    updateControls()
+  })
+
+  connectButton.addEventListener('click', () => connectPico(symbol))
+  document.getElementById(`emu-start-${symbol}`).addEventListener('click', () => connectEmu(symbol))
+}
+
+async function connectPico(symbol) {
+  const player = players[symbol]
+  const serial = new PicoSerial(`Pico ${symbol}`)
+  try {
+    await serial.connect()
+  } catch (error) {
+    setStatus(`Connessione fallita: ${error.message}`, true)
+    return
+  }
+  serial.onmessage(line => handlePicoLine(symbol, line))
+  serial.ondisconnect(() => {
+    player.serial = null
+    updateControls()
+    setStatus(`Il Pico di ${symbol} si è disconnesso.`, true)
+  })
+  player.serial = serial
+  setStatus(`RP2040 connesso per ${symbol}.`)
+  updateControls()
+}
+
+function handlePicoLine(symbol, line) {
+  let parsed
+  try {
+    parsed = JSON.parse(line)
+  } catch {
+    return // output di debug del Pico, già loggato in console da PicoSerial
+  }
+  if (parsed == null || parsed.move == null) return
+  const resolve = players[symbol].pendingResolve
+  if (resolve) {
+    players[symbol].pendingResolve = null
+    resolve(parsed.move)
+  }
+}
+
+async function connectEmu(symbol) {
+  const player = players[symbol]
+  const button = document.getElementById(`emu-start-${symbol}`)
+  const code = document.getElementById(`emu-code-${symbol}`).value
+  button.disabled = true
+  setStatus("Preparo l'emulatore (il primo avvio scarica Pyodide, può volerci qualche secondo)…")
+  try {
+    const emu = new EmulatedPico(`Emu ${symbol}`, code, MOVE_TIME_LIMIT_MS)
+    await emu.start()
+    emu.onmessage(line => handlePicoLine(symbol, line))
+    emu.ondisconnect(() => {
+      player.serial = null
+      updateControls()
+    })
+    player.serial = emu
+    setStatus(`Bot emulato pronto per ${symbol}.`)
+  } catch (error) {
+    player.serial = null
+    setStatus(`Emulatore: ${error.message}`, true)
+  }
+  button.disabled = false
+  updateControls()
+}
+
+function isReady(symbol) {
+  const player = players[symbol]
+  return !isPicoLike(player.type) || player.serial !== null
+}
+
+function updateControls() {
+  for (const symbol of ['X', 'O']) {
+    const player = players[symbol]
+    const connected = player.serial !== null
+    const connStatus = document.getElementById(`conn-${symbol}`)
+    const connectButton = document.getElementById(`connect-${symbol}`)
+    connStatus.textContent = connected ? 'connesso' : 'non connesso'
+    connStatus.classList.toggle('connected', connected)
+    connectButton.disabled = connected || gameActive
+    document.getElementById(`type-${symbol}`).disabled = gameActive
+
+    const emuStatus = document.getElementById(`emu-status-${symbol}`)
+    const emuButton = document.getElementById(`emu-start-${symbol}`)
+    emuStatus.textContent = connected ? 'pronto' : 'non avviato'
+    emuStatus.classList.toggle('connected', connected)
+    emuButton.disabled = gameActive || series !== null
+    emuButton.textContent = connected ? 'Riavvia bot' : 'Avvia bot'
+  }
+  startButton.disabled = gameActive || series !== null || !isReady('X') || !isReady('O')
+  startButton.textContent = gamePlayed ? 'Nuova partita' : 'Inizia partita'
+  seriesRow.hidden = !seriesAvailable()
+}
+
+function seriesAvailable() {
+  return isPicoLike(players.X.type) && isPicoLike(players.O.type)
+}
+
+// ── Scacchiera ───────────────────────────────────────────────
+function buildBoard() {
+  gameBoard.innerHTML = ''
+  cells.length = 0
+  for (let i = 0; i < 9; i++) {
+    const cell = document.createElement('div')
+    cell.classList.add('cell')
+    cell.dataset.index = i
+    cell.addEventListener('click', () => handleCellClick(i))
+    gameBoard.appendChild(cell)
+    cells.push(cell)
+  }
+}
+
+function renderCell(index, animate = false) {
+  const cell = cells[index]
+  cell.textContent = board[index]
+  cell.classList.remove('mark-x', 'mark-o', 'pop', 'win')
+  if (board[index] === 'X') cell.classList.add('mark-x')
+  if (board[index] === 'O') cell.classList.add('mark-o')
+  if (animate && board[index] !== '') cell.classList.add('pop')
+}
+
+function setStatus(message, danger = false) {
+  statusDisplay.textContent = message
+  statusDisplay.classList.toggle('danger', danger)
+}
+
+function highlightTurn(symbol) {
+  for (const s of ['X', 'O']) {
+    document.getElementById(`card-${s}`).classList.toggle('active-turn', gameActive && s === symbol)
+  }
+}
+
+// ── Flusso di gioco ──────────────────────────────────────────
+function onStartClick() {
+  if (seriesAvailable() && seriesToggle.checked) {
+    startSeries()
+  } else {
+    series = null
+    seriesScore.hidden = true
+    startGame('X')
+  }
+}
+
+function startGame(startSymbol) {
+  board.fill('')
+  currentSymbol = startSymbol
+  lastMoveIndex = null
+  waitingHuman = false
+  gameActive = true
+  gamePlayed = true
+  clearHumanTimer()
+  announceMatch()
+  for (let i = 0; i < 9; i++) renderCell(i)
+  gameBoard.classList.remove('idle')
+  updateControls()
+  nextTurn()
+}
+
+async function nextTurn() {
+  if (!gameActive) return
+  const player = players[currentSymbol]
+  highlightTurn(currentSymbol)
+  gameBoard.classList.toggle('human-turn', player.type === PLAYER_TYPES.HUMAN)
+
+  if (player.type === PLAYER_TYPES.HUMAN) {
+    waitingHuman = true
+    setStatus(`Tocca a te, ${currentSymbol}: scegli una casella.`)
+    startHumanTimer()
+    return
+  }
+
+  if (player.type === PLAYER_TYPES.CPU_RANDOM || player.type === PLAYER_TYPES.CPU_PERFECT) {
+    setStatus(`La CPU (${currentSymbol}) sta pensando…`)
+    await sleep(CPU_MOVE_DELAY_MS)
+    if (!gameActive) return
+    const move = player.type === PLAYER_TYPES.CPU_RANDOM
+      ? randomMove(board)
+      : bestMove(board, currentSymbol)
+    applyMove(move)
+    return
+  }
+
+  // RP2040 (vero o emulato): mossa con limite di tempo
+  const engineName = player.type === PLAYER_TYPES.EMU ? 'bot emulato' : 'RP2040'
+  setStatus(`Il ${engineName} di ${currentSymbol} sta pensando…`)
+  if (player.serial === null) {
+    return declareLoss(currentSymbol, `${engineName} disconnesso`)
+  }
+  startTimerDisplay()
+  try {
+    const move = await requestPicoMove(player)
+    stopTimerDisplay()
+    if (!gameActive) return
+    if (!isValidMove(move)) {
+      return declareLoss(currentSymbol, `mossa non valida (${JSON.stringify(move)})`)
+    }
+    applyMove(move)
+  } catch {
+    stopTimerDisplay()
+    if (!gameActive) return
+    declareLoss(currentSymbol, 'tempo scaduto')
+  }
+}
+
+function requestPicoMove(player) {
+  const gameState = {
+    board: remapBoardFor(currentSymbol),
+    lastMove: lastMoveIndex,
+    winner: null,
+  }
+  return new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      player.pendingResolve = null
+      reject(new Error('timeout'))
+    }, MOVE_TIME_LIMIT_MS)
+    player.pendingResolve = (move) => {
+      clearTimeout(timeout)
+      resolve(move)
+    }
+    player.serial.sendMessage(envelope(gameState))
+  })
+}
+
+function handleCellClick(index) {
+  if (!gameActive || !waitingHuman || board[index] !== '') return
+  waitingHuman = false
+  clearHumanTimer()
+  stopTimerDisplay()
+  applyMove(index)
+}
+
+function isValidMove(move) {
+  return Number.isInteger(move) && move >= 0 && move <= 8 && board[move] === ''
+}
+
+function applyMove(index) {
+  board[index] = currentSymbol
+  lastMoveIndex = index
+  renderCell(index, true)
+
+  const result = checkWinner(board)
+  if (result) return endGame(result)
+
+  currentSymbol = currentSymbol === 'X' ? 'O' : 'X'
+  nextTurn()
+}
+
+function declareLoss(loserSymbol, reason) {
+  const winner = loserSymbol === 'X' ? 'O' : 'X'
+  endGame({ winner, line: null }, `${loserSymbol} perde: ${reason}.`)
+}
+
+function endGame(result, reasonMessage = null) {
+  gameActive = false
+  waitingHuman = false
+  clearHumanTimer()
+  stopTimerDisplay()
+  gameBoard.classList.remove('human-turn')
+  highlightTurn(null)
+
+  if (result.line) {
+    for (const i of result.line) cells[i].classList.add('win')
+  }
+
+  notifyPicos(result.winner)
+
+  if (reasonMessage) {
+    setStatus(`${reasonMessage} Vince ${result.winner}!`, true)
+  } else if (result.winner === 'TIE') {
+    setStatus('Pareggio!')
+  } else {
+    setStatus(`Vince ${result.winner}!`)
+  }
+  if (series) handleSeriesResult(result.winner)
+  updateControls()
+}
+
+// ── Sfida al meglio di 5 (solo RP2040 vs RP2040) ─────────────
+function startSeries() {
+  series = { score: { X: 0, O: 0 }, game: 0 }
+  seriesScore.hidden = false
+  nextSeriesGame()
+}
+
+function nextSeriesGame() {
+  series.game++
+  updateSeriesScoreboard()
+  const startSymbol = Math.random() < 0.5 ? 'X' : 'O'
+  startGame(startSymbol)
+  setStatus(`Partita ${series.game}: inizia ${startSymbol}.`)
+}
+
+function handleSeriesResult(winner) {
+  if (winner === 'X' || winner === 'O') series.score[winner]++
+  updateSeriesScoreboard()
+
+  const { X, O } = series.score
+  const finished = X >= SERIES_TARGET || O >= SERIES_TARGET || series.game >= SERIES_GAMES
+  if (!finished) {
+    setStatus(`${statusDisplay.textContent} Prossima partita tra poco…`)
+    setTimeout(nextSeriesGame, SERIES_PAUSE_MS)
+    return
+  }
+
+  if (X === O) {
+    setStatus(`Sfida finita in parità: ${X} a ${O}!`)
+  } else {
+    const champion = X > O ? 'X' : 'O'
+    setStatus(`${champion} vince la sfida ${Math.max(X, O)} a ${Math.min(X, O)}!`)
+  }
+  series = null
+}
+
+function updateSeriesScoreboard() {
+  const { X, O } = series.score
+  seriesScore.textContent = `Sfida al meglio di ${SERIES_GAMES} — partita ${series.game} · X ${X} : ${O} O`
+}
+
+// Notifica il risultato ai Pico connessi, veri o emulati (serve ai bot che imparano)
+function notifyPicos(winner) {
+  for (const symbol of ['X', 'O']) {
+    const player = players[symbol]
+    if (!isPicoLike(player.type) || player.serial === null) continue
+    player.pendingResolve = null
+    player.serial.sendMessage(envelope({
+      board: null,
+      lastMove: null,
+      winner: remapWinnerFor(symbol, winner),
+    }))
+  }
+}
+
+// ── Rimappatura simboli ──────────────────────────────────────
+// Ogni Pico si vede sempre come "O" e l'avversario come "X",
+// così lo stesso codice MicroPython funziona in entrambi i ruoli.
+function remapBoardFor(symbol) {
+  if (symbol === 'O') return [...board]
+  return board.map(c => (c === 'X' ? 'O' : c === 'O' ? 'X' : ''))
+}
+
+function remapWinnerFor(symbol, winner) {
+  if (winner === 'TIE' || symbol === 'O') return winner
+  return winner === 'X' ? 'O' : 'X'
+}
+
+// ── Timer a video ────────────────────────────────────────────
+function startTimerDisplay(limitMs = MOVE_TIME_LIMIT_MS) {
+  stopTimerDisplay()
+  const deadline = performance.now() + limitMs
+  timerEl.classList.remove('idle')
+  timerEl.classList.remove('low')
+  timerFill.style.width = '100%'
+  timerInterval = setInterval(() => {
+    const remaining = Math.max(0, deadline - performance.now())
+    timerFill.style.width = `${(remaining / limitMs) * 100}%`
+    timerText.textContent = `${(remaining / 1000).toFixed(1)}s`
+    timerEl.classList.toggle('low', remaining < limitMs * 0.3)
+  }, 100)
+}
+
+// Anche gli umani hanno un tempo massimo: timer a video e sconfitta a
+// tavolino se scade. I bot restano su MOVE_TIME_LIMIT_MS.
+function startHumanTimer() {
+  startTimerDisplay(HUMAN_TIME_LIMIT_MS)
+  humanTimeout = setTimeout(() => {
+    if (!gameActive || !waitingHuman) return
+    waitingHuman = false
+    declareLoss(currentSymbol, 'tempo scaduto')
+  }, HUMAN_TIME_LIMIT_MS)
+}
+
+function clearHumanTimer() {
+  clearTimeout(humanTimeout)
+  humanTimeout = null
+}
+
+function stopTimerDisplay() {
+  clearInterval(timerInterval)
+  timerInterval = null
+  // il timer resta visibile ma spento: la pagina non balla
+  timerEl.classList.add('idle')
+  timerEl.classList.remove('low')
+  timerFill.style.width = '0%'
+  timerText.textContent = ''
+}
+
+// ── Regole del tris ──────────────────────────────────────────
+function checkWinner(b) {
+  for (const line of WIN_TRIPLETS) {
+    const [a, c, d] = line
+    if (b[a] && b[a] === b[c] && b[a] === b[d]) {
+      return { winner: b[a], line }
+    }
+  }
+  if (!b.includes('')) return { winner: 'TIE', line: null }
+  return null
+}
+
+function emptyIndexes(b) {
+  return b.reduce((acc, cell, i) => (cell === '' ? [...acc, i] : acc), [])
+}
+
+// ── CPU integrata ────────────────────────────────────────────
+function randomMove(b) {
+  const empty = emptyIndexes(b)
+  return empty[Math.floor(Math.random() * empty.length)]
+}
+
+function bestMove(b, me) {
+  let bestScore = -Infinity
+  let best = []
+  for (const i of emptyIndexes(b)) {
+    b[i] = me
+    const score = minimaxScore(b, me, other(me), 1)
+    b[i] = ''
+    if (score > bestScore) {
+      bestScore = score
+      best = [i]
+    } else if (score === bestScore) {
+      best.push(i)
+    }
+  }
+  // a parità di punteggio sceglie a caso, per variare le partite
+  return best[Math.floor(Math.random() * best.length)]
+}
+
+function minimaxScore(b, me, turn, depth) {
+  const result = checkWinner(b)
+  if (result) {
+    if (result.winner === 'TIE') return 0
+    return result.winner === me ? 10 - depth : depth - 10
+  }
+  const scores = emptyIndexes(b).map(i => {
+    b[i] = turn
+    const score = minimaxScore(b, me, other(turn), depth + 1)
+    b[i] = ''
+    return score
+  })
+  return turn === me ? Math.max(...scores) : Math.min(...scores)
+}
+
+function other(symbol) {
+  return symbol === 'X' ? 'O' : 'X'
+}
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms))
+}
+
+// ── Avvio ────────────────────────────────────────────────────
+startButton.addEventListener('click', onStartClick)
+buildBoard()
+updateControls()
+
+// ── Busta di protocollo e integrazione torneo ────────────────
+// Ogni messaggio porta la busta {game, match}; a inizio partita i bot
+// ricevono un annuncio con la sola busta e i campi di gioco a null.
+const GAME_ID = 'tictactoe'
+const PLAYER_ORDER = ['X', 'O']
+let matchId = null
+let externalOnEnd = null
+
+function envelope(payload) {
+  return JSON.stringify({ game: GAME_ID, match: matchId, ...payload })
+}
+
+function newMatchId() {
+  return typeof crypto !== 'undefined' && crypto.randomUUID
+    ? crypto.randomUUID()
+    : `m-${Date.now()}-${Math.random().toString(16).slice(2)}`
+}
+
+function announceMatch() {
+  matchId = newMatchId()
+  for (const id of PLAYER_ORDER) {
+    const player = players[id]
+    if (!isPicoLike(player.type) || player.serial === null) continue
+    player.serial.sendMessage(envelope({ board: null, lastMove: null, winner: null }))
+  }
+}
+
+const baseEndGame = endGame
+endGame = function (...args) {
+  baseEndGame(...args)
+  if (externalOnEnd) {
+    const onEnd = externalOnEnd
+    externalOnEnd = null
+    onEnd(args[0].winner === 'TIE' ? 'TIE' : args[0].winner === 'X' ? 'P1' : 'P2')
+  }
+}
+
+// La pagina può essere pilotata da un contenitore (modalità torneo):
+// riceve le seriali già connesse e gioca una singola partita.
+globalThis.startExternalMatch = function (serials, onEnd) {
+  externalOnEnd = onEnd
+  document.body.classList.add('external-match')
+  PLAYER_ORDER.forEach((id, i) => {
+    // uno slot può essere una CPU integrata: si passa il suo tipo come stringa
+    if (typeof serials[i] === 'string') {
+      players[id].type = serials[i]
+      players[id].serial = null
+      return
+    }
+    players[id].type = PLAYER_TYPES.PICO
+    players[id].serial = serials[i]
+    serials[i].onmessage(line => handlePicoLine(id, line))
+    serials[i].ondisconnect(() => { players[id].serial = null })
+  })
+  startGame(Math.random() < 0.5 ? 'X' : 'O')
+}

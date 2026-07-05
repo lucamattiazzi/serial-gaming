@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="it">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>API di Tron — Serial Gaming</title>
+  <link rel="stylesheet" href="../style.css">
+</head>
+
+<body class="home">
+  <p><a href="./">&larr; Torna al gioco</a> · <a href="../">Home</a></p>
+
+  <header class="hero">
+    <h1>Tron — <span class="accent">API del bot</span></h1>
+    <p>Due moto luminose, una griglia, scie che diventano muri. L'ultimo vivo vince.</p>
+  </header>
+
+  <h2>Come funziona</h2>
+  <p>Griglia <strong>40×30</strong>. A ogni <strong>tick (~150 ms)</strong> entrambe le moto
+    avanzano di una cella nella loro direzione corrente, e la cella che lasciano diventa un
+    muro permanente. Muore chi finisce fuori griglia, su una scia (anche la propria) o in
+    collisione frontale con l'avversario (in quel caso muoiono entrambi: pareggio).</p>
+  <p>Come nel pong, il gioco è in tempo reale: a ogni tick ricevi lo stato e puoi rispondere
+    con una direzione, che <strong>resta attiva finché non ne mandi un'altra</strong>. Non sei
+    obbligato a rispondere a ogni tick, ma un bot muto per più di <strong>3 secondi</strong>
+    perde. Trasporto solito: righe JSON su seriale USB.</p>
+
+  <h2>La busta comune</h2>
+  <p>Ogni messaggio che ricevi contiene anche due campi di busta, omessi negli esempi di
+    questa pagina per brevità: <code>game</code> (qui <code>"tron"</code>) e
+    <code>match</code>, un UUID che identifica la singola partita e resta identico dal primo
+    all'ultimo messaggio. All'inizio di ogni partita arriva inoltre un
+    <strong>annuncio</strong> con la sola busta e tutti i campi di gioco a <code>null</code>:
+    ignoralo (la tua <code>rispondi</code> ritorna <code>None</code>). È grazie alla busta che
+    il <code>main.py</code> «router» installato dal Laboratorio smista ogni messaggio al modulo
+    del gioco giusto (<code>bot_&lt;gioco&gt;.py</code>) — è ciò che rende possibile la
+    <a href="../torneo/">modalità torneo</a>.</p>
+  <pre><code>{"game": "tron", "match": "3f2b1c4e-…", …campi del gioco…}</code></pre>
+
+  <h2>Parti sempre da sinistra</h2>
+  <p><strong>Il tuo bot si vede sempre partire dal lato sinistro</strong>, diretto verso
+    destra: per il giocatore di destra l'arbitro specchia il campo (coordinate
+    <code>x</code>, righe della griglia e direzioni <code>left</code>/<code>right</code>),
+    in entrambe le direzioni — anche i tuoi comandi. Il tuo codice non deve gestire il caso
+    "parto da destra".</p>
+
+  <h2>Messaggio in ingresso: lo stato</h2>
+  <pre><code>{"field": {"w": 40, "h": 30},
+ "grid": ["........", "..YYY...", "....O...", ...],
+ "you": {"x": 12, "y": 15, "dir": "right"},
+ "opp": {"x": 27, "y": 14, "dir": "down"},
+ "tick": 42,
+ "winner": null}</code></pre>
+  <table>
+    <tr>
+      <th>Campo</th>
+      <th>Significato</th>
+    </tr>
+    <tr>
+      <td><code>grid</code></td>
+      <td>30 stringhe da 40 caratteri (riga 0 in alto): <code>.</code> libero,
+        <code>Y</code> la tua scia, <code>O</code> quella avversaria. Le teste sono incluse
+        nelle scie.</td>
+    </tr>
+    <tr>
+      <td><code>you</code> / <code>opp</code></td>
+      <td>Posizione della testa e direzione corrente (<code>"up"</code>, <code>"down"</code>,
+        <code>"left"</code>, <code>"right"</code>). <code>y</code> cresce verso il basso.</td>
+    </tr>
+    <tr>
+      <td><code>tick</code></td>
+      <td>Numero del passo di gioco.</td>
+    </tr>
+    <tr>
+      <td><code>winner</code></td>
+      <td><code>null</code> durante il gioco; <code>"you"</code>/<code>"opp"</code>/<code>"TIE"</code>
+        nella notifica finale.</td>
+    </tr>
+  </table>
+
+  <h2>La tua risposta</h2>
+  <pre><code>{"move": "up"}</code></pre>
+  <ul class="rules">
+    <li>Una di <code>"up"</code>, <code>"down"</code>, <code>"left"</code>,
+      <code>"right"</code>. Qualsiasi altro valore = sconfitta immediata.</li>
+    <li>L'inversione a U è ammessa ma suicida: ti schianti sulla tua scia.</li>
+    <li><strong>Silenzio massimo: 3 secondi</strong>, poi perdi.</li>
+    <li>Disconnessione a partita in corso = sconfitta.</li>
+  </ul>
+
+  <h2>Esempio completo</h2>
+  <pre><code>DIRS = {"up": (0, -1), "down": (0, 1), "left": (-1, 0), "right": (1, 0)}
+
+
+def is_free(state, x, y):
+    w = state["field"]["w"]
+    h = state["field"]["h"]
+    if x &lt; 0 or x &gt;= w or y &lt; 0 or y &gt;= h:
+        return False
+    return state["grid"][y][x] == "."
+
+
+def next_move(state):
+    me = state["you"]
+    # tira dritto finche' puoi, altrimenti svolta sulla prima via libera
+    order = [me["dir"]] + [d for d in DIRS if d != me["dir"]]
+    for d in order:
+        dx, dy = DIRS[d]
+        if is_free(state, me["x"] + dx, me["y"] + dy):
+            return d
+    return me["dir"]  # spacciato comunque
+
+
+def rispondi(state):
+    if state.get("winner") is not None:
+        return None  # partita finita
+    if state.get("grid") is None:
+        return None  # annuncio di inizio partita
+    return {"move": next_move(state)}</code></pre>
+
+  <h2>Consigli</h2>
+  <ul class="rules">
+    <li>Sopravvivere ≠ vincere: la strategia vera è <strong>controllare più spazio
+        dell'avversario</strong>. Un flood fill dalla tua testa (contro uno dalla sua) ti dice
+      chi sta vincendo il territorio.</li>
+    <li>Gli stati arrivano ogni ~150 ms e la griglia pesa ~1.3 KB: tieni il parsing snello e
+      rispondi in fretta, o giocherai su uno stato vecchio. Su MicroPython puoi scartare gli
+      stati arretrati con <code>select.poll</code> su stdin.</li>
+    <li>Per l'emulatore le solite note: CPython, riesecuzione a ogni messaggio (~7 volte al
+      secondo: inizializzazione di modulo leggerissima).</li>
+  </ul>
+</body>
+
+</html>
