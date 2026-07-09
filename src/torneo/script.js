@@ -12,6 +12,7 @@ const CATALOG = {
   pong: { name: 'Pong', path: '../pong/' },
   tron: { name: 'Tron', path: '../tron/' },
   navale: { name: 'Battaglia navale', path: '../navale/' },
+  othello: { name: 'Othello', path: '../othello/' },
   racetrack: { name: 'Racetrack', path: '../racetrack/' },
   arena: { name: 'Arena dei Mostri', path: '../arena/' },
   chess: { name: 'Scacchi', path: '../chess/' },

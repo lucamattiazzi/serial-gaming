@@ -67,6 +67,37 @@ def vicino_a_un_colpo():
     return random.choice(bersagli) if bersagli else colpo_a_caso()
 
 
+def _bersagli_in_linea():
+    # due o piu' colpi a segno adiacenti: la nave continua alle estremita'
+    tried = _provate()
+    hits = {(s["x"], s["y"]) for s in SHOTS if s["result"] == "hit"}
+    res = []
+    for x, y in hits:
+        for dx, dy in ((1, 0), (0, 1)):
+            if (x + dx, y + dy) not in hits:
+                continue
+            ax, ay = x, y
+            while (ax - dx, ay - dy) in hits:
+                ax, ay = ax - dx, ay - dy
+            bx, by = x + dx, y + dy
+            while (bx + dx, by + dy) in hits:
+                bx, by = bx + dx, by + dy
+            for cella in ((ax - dx, ay - dy), (bx + dx, by + dy)):
+                if 0 <= cella[0] < 10 and 0 <= cella[1] < 10 \
+                        and cella not in tried and cella not in res:
+                    res.append(cella)
+    return res
+
+
+def ho_una_linea():
+    return len(_bersagli_in_linea()) > 0
+
+
+def colpo_in_linea():
+    bersagli = _bersagli_in_linea()
+    return random.choice(bersagli) if bersagli else vicino_a_un_colpo()
+
+
 def quanti_colpi_a_segno():
     return sum(1 for s in SHOTS if s["result"] in ("hit", "sunk"))
 
@@ -104,15 +135,25 @@ LAB_GAMES.navale = {
 
   starterXml: `<xml xmlns="https://developers.google.com/blockly/xml">
   <block type="controls_if" x="30" y="30">
-    <value name="IF0"><block type="nav_ho_bersaglio"></block></value>
+    <value name="IF0"><block type="nav_ho_linea"></block></value>
     <statement name="DO0">
       <block type="nav_spara">
-        <value name="CELLA"><block type="nav_vicino"></block></value>
+        <value name="CELLA"><block type="nav_in_linea"></block></value>
       </block>
     </statement>
     <next>
-      <block type="nav_spara">
-        <value name="CELLA"><block type="nav_scacchiera"></block></value>
+      <block type="controls_if">
+        <value name="IF0"><block type="nav_ho_bersaglio"></block></value>
+        <statement name="DO0">
+          <block type="nav_spara">
+            <value name="CELLA"><block type="nav_vicino"></block></value>
+          </block>
+        </statement>
+        <next>
+          <block type="nav_spara">
+            <value name="CELLA"><block type="nav_scacchiera"></block></value>
+          </block>
+        </next>
       </block>
     </next>
   </block>
@@ -127,6 +168,8 @@ LAB_GAMES.navale = {
         colour: '230',
         contents: [
           { kind: 'block', type: 'nav_spara' },
+          { kind: 'block', type: 'nav_ho_linea' },
+          { kind: 'block', type: 'nav_in_linea' },
           { kind: 'block', type: 'nav_ho_bersaglio' },
           { kind: 'block', type: 'nav_vicino' },
           { kind: 'block', type: 'nav_scacchiera' },
@@ -148,6 +191,8 @@ LAB_GAMES.navale = {
         colour: 160,
         tooltip: 'Fai fuoco su quella cella e chiudi il turno.',
       },
+      { type: 'nav_ho_linea', message0: 'ho due colpi a segno allineati?', output: 'Boolean', colour: 230, tooltip: 'Vero se due colpi a segno adiacenti indicano la direzione di una nave.' },
+      { type: 'nav_in_linea', message0: 'una cella che continua la linea', output: 'Cella', colour: 230, tooltip: 'La nave continua oltre le estremità dei colpi allineati: spara lì.' },
       { type: 'nav_ho_bersaglio', message0: 'ho un colpo a segno da inseguire?', output: 'Boolean', colour: 230, tooltip: 'Vero se accanto a un tuo colpo a segno ci sono celle da provare.' },
       { type: 'nav_vicino', message0: 'una cella accanto a un colpo a segno', output: 'Cella', colour: 230, tooltip: 'Insegui la nave che hai già colpito.' },
       { type: 'nav_scacchiera', message0: 'una cella a scacchiera', output: 'Cella', colour: 230, tooltip: 'Cerca saltando una cella sì e una no: nessuna nave ti sfugge.' },
@@ -160,6 +205,8 @@ LAB_GAMES.navale = {
       const value = gen.valueToCode(block, 'CELLA', Order.NONE) || 'colpo_a_scacchiera()'
       return `return ${value}\n`
     })
+    define('nav_ho_linea', () => ['ho_una_linea()', Order.FUNCTION_CALL])
+    define('nav_in_linea', () => ['colpo_in_linea()', Order.FUNCTION_CALL])
     define('nav_ho_bersaglio', () => ['ho_un_bersaglio()', Order.FUNCTION_CALL])
     define('nav_vicino', () => ['vicino_a_un_colpo()', Order.FUNCTION_CALL])
     define('nav_scacchiera', () => ['colpo_a_scacchiera()', Order.FUNCTION_CALL])
@@ -168,6 +215,11 @@ LAB_GAMES.navale = {
   },
 
   cards: {
+    linea: {
+      label: '📐 Segui la linea',
+      hint: 'Due colpi a segno allineati? La nave continua di lì: spara alle estremità.',
+      code: 'if ho_una_linea():\n  return colpo_in_linea()',
+    },
     insegui: {
       label: '🎯 Insegui i colpi a segno',
       hint: 'Hai colpito qualcosa? Spara nelle celle accanto per affondarla.',
@@ -184,5 +236,5 @@ LAB_GAMES.navale = {
       code: 'return colpo_a_caso()',
     },
   },
-  starterDeck: ['insegui', 'scacchiera'],
+  starterDeck: ['linea', 'insegui', 'scacchiera'],
 }

@@ -1,0 +1,129 @@
+/* ── Specifico di Othello (layout comune in ../game.css) ──── */
+.mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 6px;
+  font-size: 0.95rem;
+}
+
+.mark-b {
+  background: rgba(232, 234, 242, 0.1);
+}
+
+.mark-w {
+  background: rgba(232, 234, 242, 0.1);
+}
+
+#disc-score {
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  margin-bottom: 0.75rem;
+}
+
+/* ── Scacchiera ──────────────────────────────────────────── */
+#game-board {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(40px, 58px));
+  grid-template-rows: repeat(8, minmax(40px, 58px));
+  gap: 3px;
+  padding: 6px;
+  background: #14351f;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 1.25rem;
+}
+
+#game-board.idle {
+  opacity: 0.55;
+}
+
+.cell {
+  background: #1d5233;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: default;
+  user-select: none;
+  position: relative;
+  transition: background 0.15s;
+}
+
+.cell.last {
+  box-shadow: inset 0 0 0 2px var(--accent);
+}
+
+/* suggerimenti delle mosse legali (solo al turno di un umano) */
+#game-board.human-turn .cell.hint {
+  cursor: pointer;
+}
+
+#game-board.human-turn .cell.hint::after {
+  content: '';
+  width: 26%;
+  height: 26%;
+  border-radius: 50%;
+  background: rgba(232, 234, 242, 0.28);
+}
+
+#game-board.human-turn .cell.hint:hover {
+  background: #2a6a44;
+}
+
+.disc {
+  width: 82%;
+  height: 82%;
+  border-radius: 50%;
+}
+
+.disc-b {
+  background: radial-gradient(circle at 32% 30%, #4a4f61, #0b0d13 70%);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.55);
+}
+
+.disc-w {
+  background: radial-gradient(circle at 32% 30%, #ffffff, #c3c8d6 75%);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
+}
+
+.disc.pop {
+  animation: pop 0.25s ease-out;
+}
+
+.disc.flip {
+  animation: flip 0.4s ease-out;
+}
+
+@keyframes pop {
+  0% {
+    transform: scale(0.4);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes flip {
+  0% {
+    transform: scaleX(1);
+  }
+  50% {
+    transform: scaleX(0.1);
+  }
+  100% {
+    transform: scaleX(1);
+  }
+}
+
+@media (max-width: 560px) {
+  #game-board {
+    grid-template-columns: repeat(8, 38px);
+    grid-template-rows: repeat(8, 38px);
+    gap: 2px;
+  }
+}

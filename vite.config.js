@@ -10,7 +10,7 @@ import { readdirSync, copyFileSync, mkdirSync } from 'fs'
 // dist/, senza alcun Python.
 const page = (path) => resolve(__dirname, 'src', path)
 
-const GAMES = ['tictactoe', 'forza4', 'morra', 'pong', 'tron', 'navale', 'racetrack', 'arena', 'chess']
+const GAMES = ['tictactoe', 'forza4', 'morra', 'pong', 'tron', 'navale', 'othello', 'racetrack', 'arena', 'chess']
 
 const input = {
   index: page('index.html'),

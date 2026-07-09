@@ -43,6 +43,8 @@
         <option value="tictactoe">Tris</option>
         <option value="morra">Morra cinese</option>
         <option value="navale">Battaglia navale</option>
+        <option value="arena">Arena dei Mostri</option>
+        <option value="othello">Othello</option>
         <option value="chess">Scacchi</option>
       </select>
     </label>
@@ -52,7 +54,7 @@
   <section id="level-blocchi" class="level">
     <p class="intro">Costruisci la tua strategia incastrando i blocchi: si leggono dall'alto
       in basso, e il primo «gioca…» che scatta decide la mossa. Se nessuna regola scatta, il
-      bot gioca a caso (e non fa mai mosse invalide — negli scacchi il motore ti passa solo
+      bot gioca a caso (e non fa mai mosse invalide — in Othello il motore ti passa solo
       mosse legali). Poi provalo contro la CPU o caricalo sul Pico!</p>
     <div id="blockly-div"></div>
     <details id="generated-details">
@@ -76,6 +78,7 @@
         <option value="pong">Template: Pong (segui la palla)</option>
         <option value="tron">Template: Tron (tira dritto e svolta)</option>
         <option value="navale">Template: Battaglia navale (caccia semplice)</option>
+        <option value="othello">Template: Othello (mossa legale a caso)</option>
         <option value="racetrack">Template: Racetrack (prudente)</option>
         <option value="arena">Template: Arena dei Mostri (allenatore base)</option>
         <option value="chess">Template: Scacchi (scheletro)</option>
@@ -120,6 +123,8 @@
   <script src="tictactoe-blocks.js"></script>
   <script src="morra-blocks.js"></script>
   <script src="navale-blocks.js"></script>
+  <script src="arena-blocks.js"></script>
+  <script src="othello-blocks.js"></script>
   <script src="chess-blocks.js"></script>
   <script src="../config.js"></script>
   <script src="script.js"></script>

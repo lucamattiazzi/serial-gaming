@@ -59,7 +59,7 @@ function SpiegazioneView() {
         <li>La piattaforma è un <strong>RP2040</strong>: il tuo bot deve girare lì sopra, con i
           suoi limiti di memoria e di velocità.</li>
         <li>Ogni mossa ha un limite di tempo (lo trovi nella documentazione di ciascun gioco):
-          <strong> 1 secondo</strong> per il tris e gli scacchi, un po' di più per gli altri.
+          <strong> 1 secondo</strong> per il tris, un po' di più per gli altri.
           Se il bot non risponde in tempo, perde la partita.</li>
         <li>Una <strong>mossa non valida</strong> (casella occupata, mossa illegale, JSON
           malformato) vale come sconfitta immediata.</li>
@@ -76,11 +76,12 @@ function SpiegazioneView() {
       <p>Rispondi con l'indice della casella scelta (0–8):</p>
       <pre><code>{'{"move": 6}'}</code></pre>
 
-      <h2>Il protocollo — scacchi <small>(<a href="chess/docs.html">documentazione completa</a>)</small></h2>
-      <p>Stessa logica del tris, ma lo stato è il FEN della posizione (da lì ricavi anche di chi
-        è il turno, cioè il tuo colore). Rispondi con la mossa in notazione partenza+arrivo.</p>
-      <pre><code>{'{"fen": "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", "lastMove": null, "winner": null}'}</code></pre>
-      <pre><code>{'{"move": "e2e4"}'}</code></pre>
+      <h2>Il protocollo — othello <small>(<a href="othello/docs.html">documentazione completa</a>)</small></h2>
+      <p>Stessa logica del tris su scacchiera 8×8 (64 celle, indice = riga × 8 + colonna), con
+        un regalo: nel messaggio trovi anche <code>moves</code>, le tue mosse legali già
+        calcolate dall'arbitro. Scegline una entro 2 secondi.</p>
+      <pre><code>{'{"board": ["", "", …64 celle…], "moves": [19, 26, 37, 44], "lastMove": 20, "winner": null}'}</code></pre>
+      <pre><code>{'{"move": 19}'}</code></pre>
     </section>
   )
 }

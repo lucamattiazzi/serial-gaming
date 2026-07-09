@@ -9,6 +9,8 @@ const TEST_CPU = {
   pong: 'cpu-easy',
   tron: 'cpu-easy',
   navale: 'cpu-random',
+  othello: 'cpu-random',
+  arena: 'cpu-random',
   racetrack: 'cpu-easy',
   chess: 'cpu-random',
 }
@@ -19,6 +21,8 @@ const GAME_PATH = {
   pong: '../pong/',
   tron: '../tron/',
   navale: '../navale/',
+  othello: '../othello/',
+  arena: '../arena/',
   racetrack: '../racetrack/',
   chess: '../chess/',
 }
@@ -259,7 +263,7 @@ tryButton.addEventListener('click', async () => {
     log('Niente da provare: costruisci prima il bot.')
     return
   }
-  // giochi senza pagina pilotabile (es. arena) si provano su forza4
+  // eventuali giochi senza pagina pilotabile si provano su forza4
   const testGameId = GAME_PATH[gameId] ? gameId : 'forza4'
   testing = true
   tryButton.disabled = true

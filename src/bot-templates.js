@@ -74,6 +74,10 @@ def play_navale(state):
             return {"move": list(c)}
 
 
+def play_othello(state):
+    return {"move": random.choice(state["moves"])}
+
+
 def play_racetrack(state):
     track = state["track"]
     me = state["you"]
@@ -125,6 +129,7 @@ HANDLERS = {
     "pong": play_pong,
     "tron": play_tron,
     "navale": play_navale,
+    "othello": play_othello,
     "racetrack": play_racetrack,
 }
 
@@ -280,6 +285,28 @@ def rispondi(state):
         x, y = next_shot(state["shots"])
         return {"move": [x, y]}
     return None  # annuncio di inizio partita
+`,
+  othello: `import random
+
+# Othello: il router chiama rispondi(state) con
+# {"board": [...64 celle...], "moves": [mosse legali], "lastMove": n, "winner": None}.
+# Ritorna {"move": indice} entro 2 secondi, scegliendo tra le mosse
+# legali in "moves" (gia' calcolate dall'arbitro: se non hai mosse il
+# turno salta da solo e non vieni interrogato).
+# board: indice = riga * 8 + colonna. Sei sempre "O", l'avversario "X".
+# Mossa fuori da "moves" = sconfitta immediata.
+
+
+def next_move(board, moves):
+    return random.choice(moves)
+
+
+def rispondi(state):
+    if state.get("winner") is not None:
+        return None  # partita finita
+    if state.get("board") is None:
+        return None  # annuncio di inizio partita
+    return {"move": next_move(state["board"], state["moves"])}
 `,
   racetrack: `# Racetrack: a ogni turno v' = v + a, p' = p + v', con a = [ax, ay] e
 # componenti in {-1, 0, 1}. Ritorna {"move": [ax, ay]} entro 2s.

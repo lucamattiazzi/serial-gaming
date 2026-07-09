@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="it">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>API di Othello — Serial Gaming</title>
+  <link rel="stylesheet" href="../style.css">
+</head>
+
+<body class="home">
+  <p><a href="./">&larr; Torna al gioco</a> · <a href="../">Home</a></p>
+
+  <header class="hero">
+    <h1>Othello — <span class="accent">API del bot</span></h1>
+    <p>Tutto quello che il tuo codice MicroPython deve sapere per giocare a Othello
+      da un RP2040.</p>
+  </header>
+
+  <h2>Le regole in due minuti</h2>
+  <p>Scacchiera 8×8, si parte con quattro dischi al centro. A ogni turno metti un disco in una
+    casella che <strong>«imprigiona» almeno un disco avversario</strong> tra il tuo nuovo disco
+    e uno già tuo (in orizzontale, verticale o diagonale): tutti i dischi imprigionati diventano
+    tuoi. Se un giocatore non ha mosse legali, salta il turno; quando nessuno dei due può
+    muovere, vince chi ha <strong>più dischi</strong>.</p>
+  <p class="note">Attenzione: mangiare tante pedine all'inizio è quasi sempre un errore. Contano
+    gli <strong>angoli</strong> (non possono più essere girati) e le mosse che lasci
+    all'avversario — il bello del gioco è proprio scoprirlo con il tuo bot.</p>
+
+  <h2>Come funziona</h2>
+  <p>Il browser fa da arbitro e parla col tuo RP2040 sulla porta seriale USB
+    (<strong>115200 baud, 8N1</strong>). Il protocollo è a righe: ogni messaggio è un oggetto
+    JSON su una singola riga terminata da <code>\n</code>, in entrambe le direzioni. Dal punto
+    di vista del tuo codice: definisci <code>rispondi(state)</code> nel modulo
+    <code>bot_othello.py</code>; a leggere la seriale e a stampare la tua risposta ci pensa
+    il <code>main.py</code> «router» installato dal Laboratorio.</p>
+  <ol class="steps">
+    <li>
+      <strong>Attesa</strong>
+      <span>Il router gira in loop e legge righe da stdin; a ogni messaggio del tuo gioco
+        chiama la tua <code>rispondi(state)</code>. Tutto ciò che stampi e non è JSON valido
+        viene ignorato dall'arbitro (comodo per il debug).</span>
+    </li>
+    <li>
+      <strong>Il tuo turno</strong>
+      <span>Ricevi lo stato della partita, con la lista delle mosse legali già pronta.
+        Rispondi con la tua mossa <strong>entro 2 secondi</strong>, o perdi a tavolino.</span>
+    </li>
+    <li>
+      <strong>Fine partita</strong>
+      <span>Ricevi una notifica col vincitore. Non devi rispondere: puoi usarla per
+        imparare dal risultato.</span>
+    </li>
+  </ol>
+
+  <h2>La busta comune</h2>
+  <p>Ogni messaggio che ricevi contiene anche due campi di busta, omessi negli esempi di
+    questa pagina per brevità: <code>game</code> (qui <code>"othello"</code>) e
+    <code>match</code>, un UUID che identifica la singola partita. All'inizio di ogni partita
+    arriva inoltre un <strong>annuncio</strong> con la sola busta e tutti i campi di gioco a
+    <code>null</code>: ignoralo (la tua <code>rispondi</code> ritorna <code>None</code>).</p>
+  <pre><code>{"game": "othello", "match": "3f2b1c4e-…", …campi del gioco…}</code></pre>
+
+  <h2>Sei sempre «O»</h2>
+  <p>Qualunque sia il tuo colore sulla scacchiera a video, <strong>i tuoi dischi nei messaggi
+      sono sempre <code>"O"</code></strong> e quelli dell'avversario sempre <code>"X"</code>:
+    ci pensa l'arbitro a rimappare i simboli. Ricorda però che <strong>puoi muovere per
+      primo</strong> (il Nero comincia, e nelle sfide il colore è sorteggiato): in quel caso il
+    primo messaggio che ricevi ha la posizione iniziale e <code>lastMove</code> a
+    <code>null</code>.</p>
+
+  <h2>Messaggio in ingresso: il tuo turno</h2>
+  <pre><code>{"board": ["", "", …64 celle…], "moves": [19, 26, 37, 44], "lastMove": 20, "winner": null}</code></pre>
+  <table>
+    <tr>
+      <th>Campo</th>
+      <th>Tipo</th>
+      <th>Significato</th>
+    </tr>
+    <tr>
+      <td><code>board</code></td>
+      <td>lista di 64 stringhe</td>
+      <td>La scacchiera completa: ogni cella è <code>""</code> (vuota), <code>"X"</code>
+        (avversario) o <code>"O"</code> (tu). Indice = riga × 8 + colonna, dall'alto in
+        basso e da sinistra a destra (0 = angolo in alto a sinistra, 63 = in basso a destra).</td>
+    </tr>
+    <tr>
+      <td><code>moves</code></td>
+      <td>lista di interi</td>
+      <td><strong>Le tue mosse legali</strong>, già calcolate dall'arbitro: scegline una.
+        Non è mai vuota — se non hai mosse, l'arbitro salta il tuo turno da solo e non ti
+        interroga.</td>
+    </tr>
+    <tr>
+      <td><code>lastMove</code></td>
+      <td>intero o <code>null</code></td>
+      <td>L'ultima mossa dell'avversario; <code>null</code> se muovi per primo.</td>
+    </tr>
+    <tr>
+      <td><code>winner</code></td>
+      <td><code>null</code></td>
+      <td>Sempre <code>null</code> quando è il tuo turno. Se non lo è, il messaggio è una
+        notifica di fine partita (vedi sotto).</td>
+    </tr>
+  </table>
+  <p>Gli angoli sono gli indici <code>0</code>, <code>7</code>, <code>56</code> e
+    <code>63</code>. Un disco nell'angolo non può più essere girato: sono le caselle più
+    preziose del gioco.</p>
+
+  <h2>La tua risposta</h2>
+  <pre><code>{"move": 19}</code></pre>
+  <p>Una sola riga JSON con l'indice della casella scelta. Le regole di arbitraggio:</p>
+  <ul class="rules">
+    <li><strong>Tempo massimo: 2 secondi</strong> dal momento in cui l'arbitro invia lo stato.
+      Nessuna risposta in tempo = sconfitta.</li>
+    <li><strong>Mossa non valida</strong> = sconfitta immediata: qualsiasi indice che non sia
+      in <code>moves</code>. Il modo più semplice per non sbagliare mai: scegli sempre da
+      quella lista.</li>
+    <li>Righe che non sono JSON valido vengono ignorate (puoi stamparle per debug); la prima
+      riga JSON con un campo <code>move</code> è la tua risposta definitiva.</li>
+    <li>La disconnessione durante il tuo turno vale come sconfitta.</li>
+  </ul>
+
+  <h2>Messaggio in ingresso: fine partita</h2>
+  <pre><code>{"board": null, "moves": null, "lastMove": null, "winner": "O"}</code></pre>
+  <p><code>winner</code> vale <code>"O"</code> (hai vinto), <code>"X"</code> (hai perso) o
+    <code>"TIE"</code> (pareggio). Non rispondere: qualsiasi cosa stampi qui viene ignorata.</p>
+
+  <h2>Esempio completo</h2>
+  <pre><code>import random
+
+ANGOLI = (0, 7, 56, 63)
+
+
+def next_move(board, moves):
+    # gli angoli prima di tutto, altrimenti a caso
+    per_me = [m for m in moves if m in ANGOLI]
+    return random.choice(per_me if per_me else moves)
+
+
+def rispondi(state):
+    if state.get("winner") is not None:
+        return None  # partita finita
+    if state.get("board") is None:
+        return None  # annuncio di inizio partita
+    return {"move": next_move(state["board"], state["moves"])}</code></pre>
+
+  <h2>Idee per salire di livello</h2>
+  <ul class="rules">
+    <li><strong>Conta le catture</strong>: per ogni mossa in <code>moves</code>, quante pedine
+      giri? (Percorri le 8 direzioni sulla <code>board</code>.) Poi prova sia il bot che mangia
+      di più… sia quello che mangia di meno. Chi vince?</li>
+    <li><strong>Pesi posizionali</strong>: angoli preziosissimi, caselle adiacenti agli angoli
+      pericolose (da lì l'avversario prende l'angolo), bordi buoni. Una tabella di 64 pesi e
+      scegli la mossa col peso migliore.</li>
+    <li><strong>Mobilità</strong>: la mossa che lascia all'avversario meno mosse legali. Simula
+      la tua mossa sulla board e conta le sue risposte possibili.</li>
+    <li><strong>Guarda avanti</strong>: con 2 secondi a disposizione un minimax a profondità
+      1–2 con una buona valutazione è alla portata di un RP2040. Occhio ai tempi!</li>
+  </ul>
+
+  <h2>Note sull'emulatore</h2>
+  <p>Il tipo di giocatore <em>«RP2040 emulato»</em> esegue il tuo codice nel browser con
+    Pyodide, senza hardware. Il protocollo è identico, con qualche differenza pratica:</p>
+  <ul class="rules">
+    <li>È <strong>CPython</strong>, non MicroPython: quasi tutto il codice da bot gira uguale,
+      ma i moduli hardware (<code>machine</code>, ecc.) non esistono.</li>
+    <li>Il programma viene <strong>rieseguito da capo a ogni messaggio</strong>: le variabili
+      non sopravvivono tra un turno e l'altro. Lo stato completo arriva comunque in ogni
+      messaggio.</li>
+    <li>Il limite di tempo è misurato sull'esecuzione del tuo codice. Un loop infinito
+      blocca la pagina: se succede, ricarica.</li>
+  </ul>
+</body>
+
+</html>

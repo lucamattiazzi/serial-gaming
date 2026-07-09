@@ -75,6 +75,12 @@
         <p>Draft, tipi in ciclo e cambi al momento giusto: sei l'allenatore.</p>
         <a class="btn primary" href="arena/">Gioca</a>
       </div>
+      <div class="game-card" data-game="othello">
+        <span class="icon">◐</span>
+        <h3>Othello</h3>
+        <p>Regole in due minuti, strategia profonda: gli angoli valgono oro.</p>
+        <a class="btn primary" href="othello/">Gioca</a>
+      </div>
       <div class="game-card" data-game="chess">
         <span class="icon">♞</span>
         <h3>Scacchi</h3>
@@ -129,7 +135,7 @@
       <li>La piattaforma è un <strong>RP2040</strong>: il tuo bot deve girare lì sopra, con i
         suoi limiti di memoria e di velocità.</li>
       <li>Ogni mossa ha un limite di tempo (lo trovi nella documentazione di ciascun gioco):
-        <strong>1 secondo</strong> per il tris e gli scacchi, un po' di più per gli altri. Se
+        <strong>1 secondo</strong> per il tris, un po' di più per gli altri. Se
         il bot non risponde in tempo, perde la partita.</li>
       <li>Una <strong>mossa non valida</strong> (casella occupata, mossa illegale, JSON
         malformato) vale come sconfitta immediata.</li>
@@ -218,20 +224,25 @@
       <li data-game="arena"><strong>Arena dei Mostri</strong> — draft di 3 mostri e battaglia a
         scelte simultanee: tipi in ciclo, velocità e cambi al momento giusto, zero casualità.
         <a href="arena/docs.html">Documentazione</a>.</li>
+      <li data-game="othello"><strong>Othello</strong> — regole semplici e strategia profonda:
+        le mosse legali arrivano già pronte nel messaggio, mangiare tanto subito è una
+        trappola, contano angoli e mobilità. <a href="othello/docs.html">Documentazione</a>.</li>
     </ul>
 
-    <h2>Il protocollo — scacchi <small>(<a href="chess/docs.html">documentazione completa</a>)</small></h2>
-    <p>Stessa logica del tris, ma lo stato è il <a
-        href="https://it.wikipedia.org/wiki/Notazione_Forsyth-Edwards">FEN</a> della posizione:
-      da lì ricavi anche di chi è il turno, cioè il tuo colore (ti interroghiamo solo quando
-      tocca a te).</p>
-    <pre><code>{"fen": "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", "lastMove": null, "winner": null}</code></pre>
-    <p>Rispondi con la mossa in notazione <em>casella di partenza + casella di arrivo</em>
-      (promozione con lettera finale, es. <code>e7e8q</code>). Una mossa illegale vale
-      sconfitta: generare mosse legali su un RP2040 è la parte difficile — e il bello del
-      gioco.</p>
-    <pre><code>{"move": "e2e4"}</code></pre>
-    <p>A fine partita: <code>{"fen": null, "lastMove": null, "winner": "w" | "b" | "TIE"}</code>.</p>
+    <div data-game="chess">
+      <h2>Il protocollo — scacchi <small>(<a href="chess/docs.html">documentazione completa</a>)</small></h2>
+      <p>Stessa logica del tris, ma lo stato è il <a
+          href="https://it.wikipedia.org/wiki/Notazione_Forsyth-Edwards">FEN</a> della posizione:
+        da lì ricavi anche di chi è il turno, cioè il tuo colore (ti interroghiamo solo quando
+        tocca a te).</p>
+      <pre><code>{"fen": "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", "lastMove": null, "winner": null}</code></pre>
+      <p>Rispondi con la mossa in notazione <em>casella di partenza + casella di arrivo</em>
+        (promozione con lettera finale, es. <code>e7e8q</code>). Una mossa illegale vale
+        sconfitta: generare mosse legali su un RP2040 è la parte difficile — e il bello del
+        gioco.</p>
+      <pre><code>{"move": "e2e4"}</code></pre>
+      <p>A fine partita: <code>{"fen": null, "lastMove": null, "winner": "w" | "b" | "TIE"}</code>.</p>
+    </div>
   </section>
 
   <script src="config.js"></script>

@@ -2,5 +2,5 @@
 // Tieni allineato con src/config.js (usato dalle pagine di gioco classiche).
 export const SITE_CONFIG = {
   allowEmulator: false,
-  hiddenGames: ['pong', 'tron', 'racetrack', 'torneo'],
+  hiddenGames: ['pong', 'tron', 'racetrack', 'torneo', 'chess'],
 }

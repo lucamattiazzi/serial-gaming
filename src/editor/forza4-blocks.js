@@ -84,6 +84,28 @@ def mossa_che_blocca():
     return c if c is not None else colonna_a_caso()
 
 
+def _regala_vittoria(colonna):
+    # se gioco qui, al turno dopo l'avversario ha un 4 in fila?
+    r = _riga_caduta(colonna)
+    BOARD[r * COLS + colonna] = IO
+    regalo = _colonna_vincente(AVVERSARIO) is not None
+    BOARD[r * COLS + colonna] = ""
+    return regalo
+
+
+def colonne_sicure():
+    return [c for c in colonne_libere() if not _regala_vittoria(c)]
+
+
+def esiste_colonna_sicura():
+    return len(colonne_sicure()) > 0
+
+
+def una_colonna_sicura():
+    sicure = colonne_sicure()
+    return random.choice(sicure) if sicure else colonna_a_caso()
+
+
 def ultima_mossa_avversario():
     return ULTIMA_MOSSA if ULTIMA_MOSSA is not None else 3
 
@@ -168,6 +190,8 @@ LAB_GAMES.forza4 = {
           { kind: 'block', type: 'f4_mossa_vincente' },
           { kind: 'block', type: 'f4_avversario_puo_vincere' },
           { kind: 'block', type: 'f4_mossa_che_blocca' },
+          { kind: 'block', type: 'f4_sicura_esiste' },
+          { kind: 'block', type: 'f4_una_sicura' },
           { kind: 'block', type: 'f4_colonna_libera' },
           { kind: 'block', type: 'f4_colonna_a_caso' },
           { kind: 'block', type: 'f4_centro' },
@@ -217,6 +241,20 @@ LAB_GAMES.forza4 = {
         tooltip: "La colonna che impedisce all'avversario di vincere.",
       },
       {
+        type: 'f4_sicura_esiste',
+        message0: "c'è una colonna che non regala la vittoria?",
+        output: 'Boolean',
+        colour: 210,
+        tooltip: "Vero se puoi giocare senza offrire all'avversario un 4 in fila al turno dopo.",
+      },
+      {
+        type: 'f4_una_sicura',
+        message0: 'una colonna che non regala la vittoria',
+        output: 'Number',
+        colour: 210,
+        tooltip: "Una colonna dove la tua mossa non prepara la vittoria dell'avversario.",
+      },
+      {
         type: 'f4_colonna_libera',
         message0: 'la colonna %1 è libera?',
         args0: [{ type: 'input_value', name: 'COLONNA', check: 'Number' }],
@@ -256,6 +294,8 @@ LAB_GAMES.forza4 = {
     define('f4_mossa_vincente', () => ['mossa_vincente()', Order.FUNCTION_CALL])
     define('f4_avversario_puo_vincere', () => ['avversario_puo_vincere()', Order.FUNCTION_CALL])
     define('f4_mossa_che_blocca', () => ['mossa_che_blocca()', Order.FUNCTION_CALL])
+    define('f4_sicura_esiste', () => ['esiste_colonna_sicura()', Order.FUNCTION_CALL])
+    define('f4_una_sicura', () => ['una_colonna_sicura()', Order.FUNCTION_CALL])
     define('f4_colonna_libera', (block) => {
       const value = gen.valueToCode(block, 'COLONNA', Order.NONE) || '3'
       return [`colonna_libera(${value})`, Order.FUNCTION_CALL]
@@ -280,6 +320,11 @@ LAB_GAMES.forza4 = {
       label: '🎯 Prendi il centro',
       hint: 'La colonna in mezzo è la più preziosa: se è libera, giocala.',
       code: 'if colonna_libera(3):\n  return 3',
+    },
+    sicura: {
+      label: '⚠️ Non regalare la vittoria',
+      hint: "Evita le colonne dove la tua mossa offre all'avversario il 4 in fila.",
+      code: 'if esiste_colonna_sicura():\n  return una_colonna_sicura()',
     },
     copia: {
       label: "🪞 Copia l'avversario",

@@ -10,7 +10,7 @@ const SITE_CONFIG = {
 
   // Giochi da nascondere da home, torneo e Laboratorio. Le pagine restano
   // raggiungibili via URL diretto, ma non sono più linkate né selezionabili.
-  hiddenGames: ['pong', 'tron', 'racetrack', 'torneo'],
+  hiddenGames: ['pong', 'tron', 'racetrack', 'torneo', 'chess'],
 }
 
 function applySiteConfig() {
