@@ -175,8 +175,28 @@ function currentDeck() {
 
 function cardsCode() {
   const cards = labGame().cards
-  const body = currentDeck().map(key => cards[key].code).join('\n')
+  const body = currentDeck().map(key => {
+    const card = cards[key]
+    const nome = labAsciiLabel(card.label)
+    // ogni return della carta passa da _carta(): così il bot dichiara nella
+    // risposta quale carta ha deciso, e la pagina di gioco la "accende"
+    const code = card.code.replace(/^(\s*)return\s+(.+)$/gm,
+      (_, indent, expr) => `${indent}return _carta(${JSON.stringify(nome)}, ${expr})`)
+    return `# carta: ${nome}\n${code}`
+  }).join('\n')
   return labGame().compose(body)
+}
+
+// Accende brevemente la carta del mazzo che ha appena deciso una mossa
+// (durante la prova contro la CPU)
+function highlightDeckCard(rule) {
+  const cards = labGame().cards
+  const index = currentDeck().findIndex(key => labAsciiLabel(cards[key].label) === rule)
+  const item = index >= 0 ? cardsDeck.children[index] : null
+  if (!item || !item.classList) return
+  item.classList.remove('fired')
+  void item.offsetWidth
+  item.classList.add('fired')
 }
 
 function renderCards() {
@@ -232,6 +252,56 @@ function renderCards() {
   generatedCarte.value = cardsCode()
 }
 
+// ── Da carte a blocchi ───────────────────────────────────────
+// Ogni carta conosce la propria versione a blocchi (campo xml): il mazzo
+// diventa una catena di blocchi identica, caricata nel livello Blocchi.
+// È il ponte tra i due livelli: le carte ERANO già blocchi (e codice).
+function chainBlocksXml(fragments) {
+  if (fragments.length === 0) return ''
+  const [first, ...rest] = fragments
+  if (rest.length === 0) return first
+  const inner = chainBlocksXml(rest)
+  const at = first.lastIndexOf('</block>')
+  return `${first.slice(0, at)}<next>${inner}</next>${first.slice(at)}`
+}
+
+document.getElementById('cards-to-blocks').addEventListener('click', () => {
+  const cards = labGame().cards
+  const deck = currentDeck()
+  if (deck.length === 0) {
+    log('Il mazzo è vuoto: aggiungi qualche carta prima di trasformarlo in blocchi.')
+    return
+  }
+  if (!blocklyReady) {
+    log('Blockly non è disponibile (serve internet): il livello Blocchi non può aprirsi.')
+    return
+  }
+  const fragments = []
+  let terminale = null // la prima carta che gioca sempre chiude la catena
+  for (const key of deck) {
+    const card = cards[key]
+    if (terminale) {
+      log(`ℹ️ «${card.label}» viene dopo «${terminale}», che gioca sempre: non verrebbe mai usata.`)
+      continue
+    }
+    if (!card.xml) {
+      log(`ℹ️ «${card.label}» non ha una versione a blocchi: saltata.`)
+      continue
+    }
+    fragments.push(card.xml)
+    if (!card.xml.startsWith('<block type="controls_if"')) terminale = card.label
+  }
+  if (fragments.length === 0) {
+    log('Nessuna delle carte nel mazzo ha una versione a blocchi.')
+    return
+  }
+  const chained = chainBlocksXml(fragments).replace('<block ', '<block x="30" y="30" ')
+  savedWorkspaces[currentGameId] = `<xml xmlns="https://developers.google.com/blockly/xml">${chained}</xml>`
+  injectWorkspace()
+  log('🧩 Mazzo trasformato in blocchi: guardali nel livello Blocchi (sono le stesse regole!).')
+  location.hash = '#blocchi'
+})
+
 // ── Il bot corrente (codice + gioco a cui appartiene) ────────
 function currentBot() {
   const level = currentLevel()
@@ -273,6 +343,10 @@ tryButton.addEventListener('click', async () => {
   let emu
   try {
     emu = new EmulatedPico('Bot di prova', code, 5000)
+    // gli errori del bot devono finire nel log visibile, non solo in console
+    emu.onlog((message, level) => {
+      if (level === 'error') log(`⚠️ ${message}`)
+    })
     await emu.start()
   } catch (error) {
     log(`Il bot non parte: ${error.message}`)
@@ -293,6 +367,12 @@ tryButton.addEventListener('click', async () => {
       return
     }
     log('Si gioca! Il tuo bot ha il primo slot (sinistra / X / Giocatore 1).')
+    // ogni mossa arriva con la carta che l'ha decisa: la si accende nel
+    // mazzo e la si annota nel log (l'avversario CPU non manda regole)
+    target.__onBotRule = (id, rule) => {
+      log(`🃏 ${rule}`)
+      highlightDeckCard(rule)
+    }
     target.startExternalMatch([emu, TEST_CPU[testGameId]], winnerSlot => {
       if (winnerSlot === 'P1') log('🎉 Il tuo bot ha VINTO!')
       else if (winnerSlot === 'P2') log('La CPU ha vinto: si può fare di meglio!')

@@ -90,6 +90,49 @@ function shortPythonError(error) {
   return lines[lines.length - 1] || 'errore Python'
 }
 
+// Traduce l'ultima riga di un traceback Python in un messaggio comprensibile
+// a un ragazzo delle medie. Usata dall'emulatore e da PicoSerial.
+function friendlyBotError(text) {
+  const line = String(text || '').trim().split('\n').filter(l => l.trim()).pop() || 'errore Python'
+  const translations = [
+    [/NameError: name '([^']+)' is(?:n't| not) defined/,
+      (m) => `il nome «${m[1]}» non esiste: controlla di averlo scritto uguale a dove l'hai creato`],
+    [/IndentationError|TabError/,
+      () => 'gli spazi a inizio riga non tornano: in Python l\'allineamento fa parte del codice'],
+    [/SyntaxError/,
+      () => 'errore di scrittura: controlla parentesi, virgole e i due punti «:» a fine riga'],
+    [/IndexError/,
+      () => 'hai chiesto una posizione che non esiste nella lista (occhio: si conta da 0)'],
+    [/KeyError/,
+      () => 'hai cercato nel dizionario una chiave che non c\'è'],
+    [/TypeError/,
+      () => 'stai mescolando cose di tipo diverso (per esempio numeri e parole)'],
+    [/ZeroDivisionError/,
+      () => 'hai diviso per zero: matematicamente impossibile, anche per un bot'],
+    [/AttributeError/,
+      () => 'hai chiesto a un valore qualcosa che non sa fare (controlla il punto «.»)'],
+    [/(?:ImportError|ModuleNotFoundError)/,
+      () => 'hai importato un modulo che qui non esiste'],
+    [/RecursionError|maximum recursion/,
+      () => 'la funzione continua a chiamare se stessa senza mai fermarsi'],
+  ]
+  for (const [pattern, message] of translations) {
+    const m = line.match(pattern)
+    if (m) return `${message(m)} — ${line}`
+  }
+  return line
+}
+
+// Perché il bot non ha risposto? Se il suo codice è andato in errore lo si
+// dice chiaramente, altrimenti è un vero tempo scaduto. Usata dalle pagine
+// di gioco al posto del generico "tempo scaduto".
+function botFailReason(player) {
+  const serial = player && player.serial
+  if (serial && serial.lastError) return `il suo codice è andato in errore (${serial.lastError})`
+  if (serial && serial.lastSlow) return `troppo lento: ha risposto in ${serial.lastSlow} ms, oltre il limite`
+  return 'tempo scaduto, nessuna mossa'
+}
+
 class EmulatedPico {
   constructor(label, code, timeLimitMs) {
     this.label = label
@@ -98,8 +141,10 @@ class EmulatedPico {
     this.timeLimitMs = timeLimitMs
     this.runner = null
     this.isConnected = false
+    this.lastError = null // ultimo errore Python, in forma comprensibile
     this.messageHandler = () => { }
     this.disconnectHandler = () => { }
+    this.loghandler = null
   }
 
   onmessage(fn) {
@@ -110,6 +155,12 @@ class EmulatedPico {
     this.disconnectHandler = fn
   }
 
+  // Riceve anche i log (msg, level): serve al Laboratorio per mostrare
+  // gli errori del bot nel pannello visibile, non solo in console.
+  onlog(fn) {
+    this.loghandler = fn
+  }
+
   async start() {
     const pyodide = await loadPyodideRuntime()
     this.runner = pyodide.globals.get('_run_bot')
@@ -118,7 +169,7 @@ class EmulatedPico {
     try {
       this.runner(this.code, [])
     } catch (error) {
-      throw new Error(shortPythonError(error))
+      throw new Error(friendlyBotError(shortPythonError(error)))
     }
     this.isConnected = true
     this.logMessage('bot avviato', 'info')
@@ -133,6 +184,8 @@ class EmulatedPico {
 
   async sendMessage(message) {
     if (!this.isConnected) return
+    this.lastError = null
+    this.lastSlow = null
     this.logMessage(`inviato: ${message}`, 'info')
 
     const started = performance.now()
@@ -140,8 +193,9 @@ class EmulatedPico {
     try {
       output = this.runner(this.code, [message + '\n'])
     } catch (error) {
-      // nessuna risposta: per il gioco è come un bot muto (tempo scaduto)
-      this.logMessage(`errore Python: ${shortPythonError(error)}`, 'error')
+      // nessuna risposta: il gioco leggerà lastError per spiegare il perché
+      this.lastError = friendlyBotError(shortPythonError(error))
+      this.logMessage(`errore Python: ${this.lastError}`, 'error')
       return
     }
     const elapsed = performance.now() - started
@@ -150,6 +204,7 @@ class EmulatedPico {
     for (const line of lines) this.logMessage(line.trim(), 'info')
 
     if (elapsed > this.timeLimitMs) {
+      this.lastSlow = Math.round(elapsed)
       this.logMessage(`mossa calcolata in ${Math.round(elapsed)} ms: oltre il limite di ${this.timeLimitMs} ms`, 'error')
       return // fuori tempo: la risposta non viene consegnata
     }
@@ -158,6 +213,7 @@ class EmulatedPico {
   }
 
   logMessage(message, level = 'log') {
+    if (this.loghandler) this.loghandler(message, level)
     if (!this.verbose && level !== 'error') return
     const timestamp = new Date().toLocaleTimeString()
     console[level](`[${timestamp}] [${this.label}] ${message}`)

@@ -169,6 +169,7 @@ function handlePicoLine(symbol, line) {
     return // output di debug del bot
   }
   if (parsed == null || parsed.move == null) return
+  if (parsed.regola) showBotRule(symbol, parsed.regola)
   const resolve = players[symbol].pendingResolve
   if (resolve) {
     players[symbol].pendingResolve = null
@@ -321,7 +322,7 @@ async function nextTurn() {
   } catch {
     stopTimerDisplay()
     if (!gameActive) return
-    declareLoss(currentSymbol, 'tempo scaduto')
+    declareLoss(currentSymbol, botFailReason(player))
   }
 }
 
@@ -622,6 +623,7 @@ function newMatchId() {
 }
 
 function announceMatch() {
+  clearBotRules()
   matchId = newMatchId()
   for (const id of PLAYER_ORDER) {
     const player = players[id]

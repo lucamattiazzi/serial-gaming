@@ -18,6 +18,13 @@ ANGOLI = (0, 7, 56, 63)
 # le caselle accanto agli angoli: giocarci spesso regala l'angolo
 VICINE_AGLI_ANGOLI = (1, 8, 9, 6, 14, 15, 48, 49, 57, 54, 55, 62)
 DIREZIONI = ((-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1))
+REGOLA = None  # quale carta ha deciso l'ultima mossa (la mostra la pagina di gioco)
+
+
+def _carta(nome, mossa):
+    global REGOLA
+    REGOLA = nome
+    return mossa
 
 
 def mossa_a_caso():
@@ -97,7 +104,7 @@ const OTH_RUNTIME_TAIL = `    return mossa_a_caso()
 
 
 def rispondi(state):
-    global BOARD, MOSSE, ULTIMA_MOSSA
+    global BOARD, MOSSE, ULTIMA_MOSSA, REGOLA
     if state.get("winner") is not None:
         return None  # partita finita
     if state.get("board") is None:
@@ -105,10 +112,14 @@ def rispondi(state):
     BOARD = state["board"]
     MOSSE = state["moves"]
     ULTIMA_MOSSA = state["lastMove"]
+    REGOLA = None
     mossa = decidi()
     if mossa not in MOSSE:
-        mossa = mossa_a_caso()  # rete di sicurezza: mai una mossa invalida
-    return {"move": int(mossa)}
+        mossa = _carta("rete di sicurezza", mossa_a_caso())  # mai una mossa invalida
+    risposta = {"move": int(mossa)}
+    if REGOLA is not None:
+        risposta["regola"] = REGOLA
+    return risposta
 `
 
 LAB_GAMES.othello = {
@@ -226,31 +237,37 @@ LAB_GAMES.othello = {
       label: "👑 Prendi l'angolo",
       hint: 'Un disco nell\'angolo non può più essere girato: se puoi, prendilo.',
       code: 'if angolo_possibile():\n  return un_angolo()',
+      xml: '<block type="controls_if"><value name="IF0"><block type="oth_angolo_possibile"></block></value><statement name="DO0"><block type="oth_gioca"><value name="CASELLA"><block type="oth_un_angolo"></block></value></block></statement></block>',
     },
     sicura: {
       label: '🚧 Non regalare gli angoli',
       hint: "Evita le caselle accanto agli angoli: da lì l'avversario se li prende.",
       code: 'if esiste_mossa_sicura():\n  return una_mossa_sicura()',
+      xml: '<block type="controls_if"><value name="IF0"><block type="oth_sicura_esiste"></block></value><statement name="DO0"><block type="oth_gioca"><value name="CASELLA"><block type="oth_una_sicura"></block></value></block></statement></block>',
     },
     bordo: {
       label: '📏 Prendi il bordo',
       hint: 'I dischi sul bordo sono difficili da girare (alla larga dagli angoli altrui).',
       code: 'if bordo_possibile():\n  return un_bordo()',
+      xml: '<block type="controls_if"><value name="IF0"><block type="oth_bordo_possibile"></block></value><statement name="DO0"><block type="oth_gioca"><value name="CASELLA"><block type="oth_un_bordo"></block></value></block></statement></block>',
     },
     ghiotta: {
       label: '😋 Mangia il più possibile',
       hint: 'La mossa che gira più pedine. Sembra furbo… sarà vero?',
       code: 'return mossa_piu_ghiotta()',
+      xml: '<block type="oth_gioca"><value name="CASELLA"><block type="oth_piu_ghiotta"></block></value></block>',
     },
     parca: {
       label: '🤏 Mangia il meno possibile',
       hint: 'Poche pedine girate = meno regali all\'avversario. I campioni fanno così.',
       code: 'return mossa_meno_ghiotta()',
+      xml: '<block type="oth_gioca"><value name="CASELLA"><block type="oth_meno_ghiotta"></block></value></block>',
     },
     caso: {
       label: '🎲 Gioca a caso',
       hint: 'Una mossa legale qualsiasi.',
       code: 'return mossa_a_caso()',
+      xml: '<block type="oth_gioca"><value name="CASELLA"><block type="oth_caso"></block></value></block>',
     },
   },
   starterDeck: ['angolo', 'sicura', 'ghiotta'],

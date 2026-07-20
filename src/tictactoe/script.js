@@ -12,6 +12,7 @@ const PLAYER_TYPES = {
   EMU: 'emu',
   CPU_RANDOM: 'cpu-random',
   CPU_PERFECT: 'cpu-perfect',
+  CPU_LEARN: 'cpu-learn', // la CPU che impara (vedi impara.js, si attiva con #impara)
 }
 
 // vero RP2040 o emulato: stesso protocollo, stesso limite di tempo
@@ -106,6 +107,7 @@ function handlePicoLine(symbol, line) {
     return // output di debug del Pico, già loggato in console da PicoSerial
   }
   if (parsed == null || parsed.move == null) return
+  if (parsed.regola) showBotRule(symbol, parsed.regola)
   const resolve = players[symbol].pendingResolve
   if (resolve) {
     players[symbol].pendingResolve = null
@@ -253,6 +255,14 @@ async function nextTurn() {
     return
   }
 
+  if (player.type === PLAYER_TYPES.CPU_LEARN) {
+    setStatus(`La CPU che impara (${currentSymbol}) sta pensando…`)
+    await sleep(CPU_MOVE_DELAY_MS)
+    if (!gameActive) return
+    applyMove(menaceMove(board, currentSymbol))
+    return
+  }
+
   // RP2040 (vero o emulato): mossa con limite di tempo
   const engineName = player.type === PLAYER_TYPES.EMU ? 'bot emulato' : 'RP2040'
   setStatus(`Il ${engineName} di ${currentSymbol} sta pensando…`)
@@ -271,7 +281,7 @@ async function nextTurn() {
   } catch {
     stopTimerDisplay()
     if (!gameActive) return
-    declareLoss(currentSymbol, 'tempo scaduto')
+    declareLoss(currentSymbol, botFailReason(player))
   }
 }
 
@@ -544,6 +554,7 @@ function newMatchId() {
 }
 
 function announceMatch() {
+  clearBotRules()
   matchId = newMatchId()
   for (const id of PLAYER_ORDER) {
     const player = players[id]

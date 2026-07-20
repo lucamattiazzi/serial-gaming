@@ -9,6 +9,13 @@ const NAVALE_RUNTIME_HEAD = `import random
 # Il router (main.py) chiama rispondi(state) a ogni messaggio.
 
 SHOTS = []
+REGOLA = None  # quale carta ha deciso l'ultimo colpo (la mostra la pagina di gioco)
+
+
+def _carta(nome, mossa):
+    global REGOLA
+    REGOLA = nome
+    return mossa
 
 
 def _piazza_flotta(fleet):
@@ -109,7 +116,7 @@ const NAVALE_RUNTIME_TAIL = `    return colpo_a_scacchiera()
 
 
 def rispondi(state):
-    global SHOTS
+    global SHOTS, REGOLA
     if state.get("winner") is not None:
         return None  # partita finita
     if state.get("phase") == "place":
@@ -117,13 +124,17 @@ def rispondi(state):
     if state.get("phase") != "hunt":
         return None  # annuncio di inizio partita
     SHOTS = state["shots"]
+    REGOLA = None
     mossa = decidi()
     valida = (isinstance(mossa, (list, tuple)) and len(mossa) == 2
               and 0 <= mossa[0] < 10 and 0 <= mossa[1] < 10
               and (mossa[0], mossa[1]) not in _provate())
     if not valida:
-        mossa = colpo_a_caso()  # rete di sicurezza
-    return {"move": [int(mossa[0]), int(mossa[1])]}
+        mossa = _carta("rete di sicurezza", colpo_a_caso())
+    risposta = {"move": [int(mossa[0]), int(mossa[1])]}
+    if REGOLA is not None:
+        risposta["regola"] = REGOLA
+    return risposta
 `
 
 LAB_GAMES.navale = {
@@ -219,21 +230,25 @@ LAB_GAMES.navale = {
       label: '📐 Segui la linea',
       hint: 'Due colpi a segno allineati? La nave continua di lì: spara alle estremità.',
       code: 'if ho_una_linea():\n  return colpo_in_linea()',
+      xml: '<block type="controls_if"><value name="IF0"><block type="nav_ho_linea"></block></value><statement name="DO0"><block type="nav_spara"><value name="CELLA"><block type="nav_in_linea"></block></value></block></statement></block>',
     },
     insegui: {
       label: '🎯 Insegui i colpi a segno',
       hint: 'Hai colpito qualcosa? Spara nelle celle accanto per affondarla.',
       code: 'if ho_un_bersaglio():\n  return vicino_a_un_colpo()',
+      xml: '<block type="controls_if"><value name="IF0"><block type="nav_ho_bersaglio"></block></value><statement name="DO0"><block type="nav_spara"><value name="CELLA"><block type="nav_vicino"></block></value></block></statement></block>',
     },
     scacchiera: {
       label: '♟️ Cerca a scacchiera',
       hint: 'Una cella sì e una no: la nave più corta (2) non può sfuggirti.',
       code: 'return colpo_a_scacchiera()',
+      xml: '<block type="nav_spara"><value name="CELLA"><block type="nav_scacchiera"></block></value></block>',
     },
     caso: {
       label: '🎲 Spara a caso',
       hint: 'Fuoco alla cieca su una cella mai provata.',
       code: 'return colpo_a_caso()',
+      xml: '<block type="nav_spara"><value name="CELLA"><block type="nav_caso"></block></value></block>',
     },
   },
   starterDeck: ['linea', 'insegui', 'scacchiera'],

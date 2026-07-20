@@ -10,6 +10,13 @@ BEATS = {"rock": "scissors", "paper": "rock", "scissors": "paper"}
 BEATEN_BY = {"rock": "paper", "paper": "scissors", "scissors": "rock"}
 HISTORY = []
 ROUND = 1
+REGOLA = None  # quale carta ha deciso l'ultima mossa (la mostra la pagina di gioco)
+
+
+def _carta(nome, mossa):
+    global REGOLA
+    REGOLA = nome
+    return mossa
 
 
 def mano_a_caso():
@@ -64,17 +71,21 @@ const MORRA_RUNTIME_TAIL = `    return mano_a_caso()
 
 
 def rispondi(state):
-    global HISTORY, ROUND
+    global HISTORY, ROUND, REGOLA
     if state.get("winner") is not None:
         return None  # partita finita
     if state.get("round") is None:
         return None  # annuncio di inizio partita
     HISTORY = state["history"]
     ROUND = state["round"]
+    REGOLA = None
     mossa = decidi()
     if mossa not in HANDS:
-        mossa = mano_a_caso()  # rete di sicurezza
-    return {"move": mossa}
+        mossa = _carta("rete di sicurezza", mano_a_caso())
+    risposta = {"move": mossa}
+    if REGOLA is not None:
+        risposta["regola"] = REGOLA
+    return risposta
 `
 
 LAB_GAMES.morra = {
@@ -201,26 +212,31 @@ LAB_GAMES.morra = {
       label: '🔁 Se vinco, ripeto',
       hint: 'Chi vince tende a cambiare... tu no: ripeti la mossa vincente.',
       code: 'if ho_vinto_lultimo_round():\n  return mia_ultima_mossa()',
+      xml: '<block type="controls_if"><value name="IF0"><block type="morra_ho_vinto"></block></value><statement name="DO0"><block type="morra_gioca"><value name="MANO"><block type="morra_mia_ultima"></block></value></block></statement></block>',
     },
     cambia: {
       label: '🔀 Se perdo, batto la sua',
       hint: "Se ho perso, gioco la mossa che batte l'ultima dell'avversario.",
       code: 'if ho_perso_lultimo_round():\n  return cosa_batte(ultima_mossa_avversario())',
+      xml: '<block type="controls_if"><value name="IF0"><block type="morra_ho_perso"></block></value><statement name="DO0"><block type="morra_gioca"><value name="MANO"><block type="morra_cosa_batte"><value name="MANO"><block type="morra_ultima_avv"></block></value></block></value></block></statement></block>',
     },
     preferita: {
       label: '🧠 Batti la sua preferita',
       hint: "Conta le mosse dell'avversario e batti la più frequente.",
       code: 'return cosa_batte(mossa_preferita_avversario())',
+      xml: '<block type="morra_gioca"><value name="MANO"><block type="morra_cosa_batte"><value name="MANO"><block type="morra_preferita"></block></value></block></value></block>',
     },
     ultima: {
       label: '🔮 Batti la sua ultima',
       hint: "Scommetti che ripeterà l'ultima mossa: giocaci contro.",
       code: 'return cosa_batte(ultima_mossa_avversario())',
+      xml: '<block type="morra_gioca"><value name="MANO"><block type="morra_cosa_batte"><value name="MANO"><block type="morra_ultima_avv"></block></value></block></value></block>',
     },
     caso: {
       label: '🎲 A caso',
       hint: 'Imprevedibile per definizione.',
       code: 'return mano_a_caso()',
+      xml: '<block type="morra_gioca"><value name="MANO"><block type="morra_caso"></block></value></block>',
     },
   },
   starterDeck: ['ripeti', 'cambia', 'preferita'],

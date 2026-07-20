@@ -249,6 +249,7 @@ function handlePicoLine(id, line) {
   }
   if (parsed == null || typeof parsed !== 'object') return
   if (parsed.move == null && parsed.ships == null) return
+  if (parsed.regola) showBotRule(id, parsed.regola)
   const resolve = players[id].pendingResolve
   if (resolve) {
     players[id].pendingResolve = null
@@ -422,7 +423,7 @@ function getPlacement(id) {
   return new Promise((resolve, reject) => {
     const timeout = setTimeout(() => {
       player.pendingResolve = null
-      reject({ id, reason: 'tempo scaduto nel piazzamento' })
+      reject({ id, reason: `piazzamento: ${botFailReason(player)}` })
     }, PLACE_TIME_LIMIT_MS)
     player.pendingResolve = (parsed) => {
       clearTimeout(timeout)
@@ -485,7 +486,7 @@ async function nextTurn() {
   } catch {
     stopTimerDisplay()
     if (!gameActive) return
-    declareLoss(id, 'tempo scaduto')
+    declareLoss(id, botFailReason(player))
   }
 }
 
@@ -666,6 +667,7 @@ function newMatchId() {
 }
 
 function announceMatch() {
+  clearBotRules()
   matchId = newMatchId()
   for (const id of PLAYER_ORDER) {
     const player = players[id]

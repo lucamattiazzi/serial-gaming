@@ -19,6 +19,13 @@ ORTO = ((1, 0), (-1, 0), (0, 1), (0, -1))
 
 POS = None
 LEGALI = []
+REGOLA = None  # quale carta ha deciso l'ultima mossa (la mostra la pagina di gioco)
+
+
+def _carta(nome, mossa):
+    global REGOLA
+    REGOLA = nome
+    return mossa
 
 
 def _parse_fen(fen):
@@ -252,7 +259,7 @@ const CHESS_RUNTIME_TAIL = `    return mossa_a_caso()
 
 
 def rispondi(state):
-    global POS, LEGALI
+    global POS, LEGALI, REGOLA
     if state.get("winner") is not None:
         return None  # partita finita
     if state.get("fen") is None:
@@ -261,10 +268,14 @@ def rispondi(state):
     LEGALI = _legali(POS)
     if not LEGALI:
         return None
+    REGOLA = None
     mossa = decidi()
     if mossa not in LEGALI:
-        mossa = mossa_a_caso()  # rete di sicurezza: solo mosse legali
-    return {"move": _uci(mossa)}
+        mossa = _carta("rete di sicurezza", mossa_a_caso())  # solo mosse legali
+    risposta = {"move": _uci(mossa)}
+    if REGOLA is not None:
+        risposta["regola"] = REGOLA
+    return risposta
 `
 
 LAB_GAMES.chess = {

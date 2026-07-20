@@ -3,6 +3,18 @@
 // starterXml e toolbox per Blockly, setupBlocks(), carte e mazzo iniziale.
 const LAB_GAMES = {}
 
+// Etichetta di una carta ridotta ad ASCII puro, per finire nel sorgente
+// Python ("Mangia il più possibile" -> "Mangia il piu' possibile"): il
+// codice caricato sul Pico resta senza emoji e senza accentate.
+function labAsciiLabel(label) {
+  return label
+    .replace(/à/g, "a'").replace(/[èé]/g, "e'").replace(/ì/g, "i'")
+    .replace(/ò/g, "o'").replace(/ù/g, "u'")
+    .replace(/[^\x20-\x7E]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
 // indenta il corpo di decidi() di 4 spazi
 function labIndent(body) {
   const lines = body.split('\n').filter(line => line.trim() !== '')

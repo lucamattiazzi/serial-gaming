@@ -263,3 +263,30 @@ header h1 .game-icon {
 header h1:hover .game-icon {
   transform: rotate(8deg) scale(1.15);
 }
+
+/* ── La carta che ha deciso la mossa (bot composti nel Laboratorio) ── */
+.bot-rule {
+  align-self: flex-start;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  background: var(--bg-soft);
+  color: var(--text-dim);
+  border: 1px solid var(--border);
+}
+
+.bot-rule.flash {
+  animation: bot-rule-flash 1s ease-out;
+}
+
+@keyframes bot-rule-flash {
+  0% {
+    border-color: var(--accent);
+    box-shadow: 0 0 12px rgba(79, 209, 197, 0.5);
+    color: var(--text);
+  }
+
+  100% {
+    box-shadow: none;
+  }
+}

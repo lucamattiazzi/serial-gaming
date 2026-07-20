@@ -11,6 +11,13 @@ BOARD = []
 ULTIMA_MOSSA = None
 IO = "O"
 AVVERSARIO = "X"
+REGOLA = None  # quale carta ha deciso l'ultima mossa (la mostra la pagina di gioco)
+
+
+def _carta(nome, mossa):
+    global REGOLA
+    REGOLA = nome
+    return mossa
 
 
 def _riga_caduta(colonna):
@@ -117,17 +124,21 @@ const FORZA4_RUNTIME_TAIL = `    return colonna_a_caso()
 
 
 def rispondi(state):
-    global BOARD, ULTIMA_MOSSA
+    global BOARD, ULTIMA_MOSSA, REGOLA
     if state.get("winner") is not None:
         return None  # partita finita
     if state.get("board") is None:
         return None  # annuncio di inizio partita
     BOARD = state["board"]
     ULTIMA_MOSSA = state["lastMove"]
+    REGOLA = None
     mossa = decidi()
     if not colonna_libera(mossa):
-        mossa = colonna_a_caso()  # rete di sicurezza: mai una mossa invalida
-    return {"move": int(mossa)}
+        mossa = _carta("rete di sicurezza", colonna_a_caso())  # mai una mossa invalida
+    risposta = {"move": int(mossa)}
+    if REGOLA is not None:
+        risposta["regola"] = REGOLA
+    return risposta
 `
 
 LAB_GAMES.forza4 = {
@@ -310,26 +321,31 @@ LAB_GAMES.forza4 = {
       label: '🏆 Vinci se puoi',
       hint: 'Se una colonna ti fa fare 4 in fila, giocala.',
       code: 'if posso_vincere():\n  return mossa_vincente()',
+      xml: '<block type="controls_if"><value name="IF0"><block type="f4_posso_vincere"></block></value><statement name="DO0"><block type="f4_gioca"><value name="COLONNA"><block type="f4_mossa_vincente"></block></value></block></statement></block>',
     },
     blocca: {
       label: "🛡️ Blocca l'avversario",
       hint: "Se l'avversario sta per vincere, tappagli la colonna.",
       code: 'if avversario_puo_vincere():\n  return mossa_che_blocca()',
+      xml: '<block type="controls_if"><value name="IF0"><block type="f4_avversario_puo_vincere"></block></value><statement name="DO0"><block type="f4_gioca"><value name="COLONNA"><block type="f4_mossa_che_blocca"></block></value></block></statement></block>',
     },
     centro: {
       label: '🎯 Prendi il centro',
       hint: 'La colonna in mezzo è la più preziosa: se è libera, giocala.',
       code: 'if colonna_libera(3):\n  return 3',
+      xml: '<block type="controls_if"><value name="IF0"><block type="f4_colonna_libera"><value name="COLONNA"><block type="f4_centro"></block></value></block></value><statement name="DO0"><block type="f4_gioca"><value name="COLONNA"><block type="f4_centro"></block></value></block></statement></block>',
     },
     sicura: {
       label: '⚠️ Non regalare la vittoria',
       hint: "Evita le colonne dove la tua mossa offre all'avversario il 4 in fila.",
       code: 'if esiste_colonna_sicura():\n  return una_colonna_sicura()',
+      xml: '<block type="controls_if"><value name="IF0"><block type="f4_sicura_esiste"></block></value><statement name="DO0"><block type="f4_gioca"><value name="COLONNA"><block type="f4_una_sicura"></block></value></block></statement></block>',
     },
     copia: {
       label: "🪞 Copia l'avversario",
       hint: "Gioca nella stessa colonna dell'ultima mossa avversaria.",
       code: 'if colonna_libera(ultima_mossa_avversario()):\n  return ultima_mossa_avversario()',
+      xml: '<block type="controls_if"><value name="IF0"><block type="f4_colonna_libera"><value name="COLONNA"><block type="f4_ultima_mossa"></block></value></block></value><statement name="DO0"><block type="f4_gioca"><value name="COLONNA"><block type="f4_ultima_mossa"></block></value></block></statement></block>',
     },
     sinistra: {
       label: '⬅️ Riempi da sinistra',
@@ -345,6 +361,7 @@ LAB_GAMES.forza4 = {
       label: '🎲 Gioca a caso',
       hint: 'Una colonna libera qualsiasi: imprevedibile!',
       code: 'return colonna_a_caso()',
+      xml: '<block type="f4_gioca"><value name="COLONNA"><block type="f4_colonna_a_caso"></block></value></block>',
     },
   },
   starterDeck: ['vinci', 'blocca', 'centro', 'caso'],

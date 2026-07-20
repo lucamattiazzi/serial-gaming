@@ -17,6 +17,7 @@ const input = {
   home: page('app.html'),
   torneo: page('torneo/index.html'),
   editor: page('editor/index.html'),
+  lezioni: page('lezioni/index.html'), // guida per il docente, non linkata dalla home
 }
 for (const game of GAMES) {
   input[game] = page(`${game}/index.html`)

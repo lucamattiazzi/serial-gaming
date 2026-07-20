@@ -337,3 +337,30 @@ button.card:hover {
   outline: none;
   border-color: var(--accent);
 }
+
+/* ── La carta del mazzo che ha appena deciso una mossa si accende ── */
+.card.fired {
+  animation: card-fired 1.1s ease-out;
+}
+
+@keyframes card-fired {
+  0% {
+    border-color: #4fd1c5;
+    box-shadow: 0 0 0 2px #4fd1c5, 0 0 20px rgba(79, 209, 197, 0.55);
+  }
+
+  100% {
+    box-shadow: none;
+  }
+}
+
+.cards-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  margin: 0.9rem 0;
+}
+
+.cards-actions small {
+  color: #9aa3b8;
+}

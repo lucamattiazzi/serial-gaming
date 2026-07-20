@@ -11,6 +11,13 @@ const ARENA_RUNTIME_HEAD = `import random
 
 CICLO = ["fuoco", "erba", "elettro", "acqua"]
 STATE = {}
+REGOLA = None  # quale carta ha deciso l'ultima azione (la mostra la pagina di gioco)
+
+
+def _carta(nome, mossa):
+    global REGOLA
+    REGOLA = nome
+    return mossa
 
 
 def _mio():
@@ -141,7 +148,7 @@ const ARENA_RUNTIME_TAIL = `    return attacco_migliore()
 
 
 def rispondi(state):
-    global STATE
+    global STATE, REGOLA
     if state.get("winner") is not None:
         return None  # partita finita
     if state.get("phase") == "draft":
@@ -151,10 +158,14 @@ def rispondi(state):
     STATE = state
     if state["phase"] == "replace":
         return {"move": cambio_migliore()}  # dopo un KO si puo' solo cambiare
+    REGOLA = None
     azione = decidi()
     if not _azione_valida(azione):
-        azione = attacco_preciso()  # rete di sicurezza: sempre valida
-    return {"move": azione}
+        azione = _carta("rete di sicurezza", attacco_preciso())  # sempre valida
+    risposta = {"move": azione}
+    if REGOLA is not None:
+        risposta["regola"] = REGOLA
+    return risposta
 `
 
 LAB_GAMES.arena = {
@@ -268,31 +279,37 @@ LAB_GAMES.arena = {
       label: '🔄 Cambia se sei svantaggiato',
       hint: 'Il suo tipo batte il tuo? Manda in campo il mostro messo meglio.',
       code: 'if sono_svantaggiato() and posso_cambiare():\n  return cambio_migliore()',
+      xml: '<block type="controls_if"><value name="IF0"><block type="logic_operation"><field name="OP">AND</field><value name="A"><block type="arena_svantaggiato"></block></value><value name="B"><block type="arena_posso_cambiare"></block></value></block></value><statement name="DO0"><block type="arena_fai"><value name="AZIONE"><block type="arena_cambio_migliore"></block></value></block></statement></block>',
     },
     scudo: {
       label: '🛡️ Para il colpo del KO',
       hint: 'Se il prossimo colpo può stenderti, difenditi: dimezzi e restituisci danno.',
       code: 'if sto_per_morire() and sono_piu_lento():\n  return difenditi()',
+      xml: '<block type="controls_if"><value name="IF0"><block type="logic_operation"><field name="OP">AND</field><value name="A"><block type="arena_sto_per_morire"></block></value><value name="B"><block type="arena_piu_lento"></block></value></block></value><statement name="DO0"><block type="arena_fai"><value name="AZIONE"><block type="arena_difendi"></block></value></block></statement></block>',
     },
     migliore: {
       label: "💥 L'attacco più efficace",
       hint: 'Il colpo col miglior danno atteso: potenza × tipo × precisione.',
       code: 'return attacco_migliore()',
+      xml: '<block type="arena_fai"><value name="AZIONE"><block type="arena_attacco_migliore"></block></value></block>',
     },
     forte: {
       label: "🔨 Sempre l'attacco forte",
       hint: 'Tutta potenza, zero paura: ma ogni tanto manca il bersaglio.',
       code: 'return attacco_forte()',
+      xml: '<block type="arena_fai"><value name="AZIONE"><block type="arena_attacco_forte"></block></value></block>',
     },
     preciso: {
       label: "🎯 Sempre l'attacco preciso",
       hint: 'Meno danno ma nessun rischio: va sempre a segno.',
       code: 'return attacco_preciso()',
+      xml: '<block type="arena_fai"><value name="AZIONE"><block type="arena_attacco_preciso"></block></value></block>',
     },
     caso: {
       label: '🎲 Agisci a caso',
       hint: 'Forte, preciso o difesa: deciderà la sorte.',
       code: 'return azione_a_caso()',
+      xml: '<block type="arena_fai"><value name="AZIONE"><block type="arena_caso"></block></value></block>',
     },
   },
   starterDeck: ['svantaggio', 'scudo', 'migliore'],

@@ -174,6 +174,7 @@ function handlePicoLine(id, line) {
     return
   }
   if (parsed == null || parsed.move == null) return
+  if (parsed.regola) showBotRule(id, parsed.regola)
   const resolve = players[id].pendingResolve
   if (resolve) {
     players[id].pendingResolve = null
@@ -329,7 +330,7 @@ function getMove(id) {
   return new Promise((resolve, reject) => {
     const timeout = setTimeout(() => {
       player.pendingResolve = null
-      reject({ id, reason: 'tempo scaduto' })
+      reject({ id, reason: botFailReason(player) })
     }, MOVE_TIME_LIMIT_MS)
     player.pendingResolve = (move) => {
       clearTimeout(timeout)
@@ -482,6 +483,7 @@ function newMatchId() {
 }
 
 function announceMatch() {
+  clearBotRules()
   matchId = newMatchId()
   for (const id of PLAYER_ORDER) {
     const player = players[id]

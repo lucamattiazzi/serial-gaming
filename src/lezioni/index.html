@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="it">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Guida per il docente — Serial Gaming</title>
+  <link rel="stylesheet" href="../style.css">
+  <style>
+    body.lezioni {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 1.5rem 1.2rem 4rem;
+    }
+
+    .lezioni header {
+      margin-bottom: 1.5rem;
+    }
+
+    .lezioni h1 {
+      margin: 0.2rem 0 0.6rem;
+    }
+
+    .lezioni .sub {
+      color: var(--text-dim);
+    }
+
+    .lezioni section {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.2rem 1.5rem;
+      margin: 1.2rem 0;
+    }
+
+    .lezioni section>h2 {
+      margin-top: 0;
+      font-size: 1.15rem;
+    }
+
+    .lezioni h3 {
+      font-size: 0.95rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--accent);
+      margin: 1.1rem 0 0.4rem;
+    }
+
+    .lezioni ul,
+    .lezioni ol {
+      margin: 0.4rem 0;
+      padding-left: 1.4rem;
+      line-height: 1.55;
+    }
+
+    .lezioni li {
+      margin: 0.25rem 0;
+    }
+
+    .lezioni p {
+      line-height: 1.55;
+    }
+
+    .lezioni .meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem 1.4rem;
+      font-size: 0.9rem;
+      color: var(--text-dim);
+      margin-bottom: 0.4rem;
+    }
+
+    .lezioni .trappola {
+      background: var(--accent-soft);
+      border-left: 3px solid var(--accent);
+      border-radius: 6px;
+      padding: 0.7rem 1rem;
+      margin: 0.8rem 0;
+    }
+
+    .lezioni .trappola strong {
+      color: var(--accent);
+    }
+
+    .lezioni code {
+      font-family: var(--font-mono);
+      font-size: 0.88em;
+      background: var(--bg-soft);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0.05rem 0.35rem;
+    }
+
+    .lezioni a {
+      color: var(--accent);
+    }
+
+    .lezioni table {
+      border-collapse: collapse;
+      width: 100%;
+      font-size: 0.9rem;
+    }
+
+    .lezioni td,
+    .lezioni th {
+      border: 1px solid var(--border);
+      padding: 0.4rem 0.6rem;
+      text-align: left;
+      vertical-align: top;
+    }
+  </style>
+</head>
+
+<body class="lezioni">
+  <header>
+    <a class="back" href="../">&larr; Home</a>
+    <h1>📚 Guida per il docente</h1>
+    <p class="sub">Otto incontri per scoprire cosa significa programmare — e cosa significa
+      «intelligenza artificiale» — scrivendo bot che giocano. Pensata per una classe delle
+      medie, a coppie, incontri da 1,5–2 ore. Questa pagina non è linkata dalla home: è per te.</p>
+  </header>
+
+  <section>
+    <h2>Prima di iniziare: la checklist</h2>
+    <ul>
+      <li><strong>Browser</strong>: serve Chrome o Edge (WebSerial). Provalo sui PC della scuola
+        <em>prima</em> della lezione 1: alcuni istituti bloccano browser o porte USB.</li>
+      <li><strong>Schede</strong>: una RP2040 con MicroPython ogni coppia. Meglio le coppie del
+        singolo: si parlano, si correggono, litigano sull'ordine delle carte (è il punto).</li>
+      <li><strong>Prova generale</strong>: connetti una scheda dal Laboratorio, carica un bot,
+        gioca una partita. Se qualcosa non va, meglio scoprirlo da soli che davanti a 24 ragazzi.</li>
+      <li><strong>Piano B</strong>: senza hardware si lavora lo stesso — le carte, i blocchi e la
+        «Prova contro la CPU» del Laboratorio girano tutti nel browser.</li>
+      <li><strong>Proiettore</strong>: quasi ogni lezione finisce con una sfida alla LIM. È il
+        momento che i ragazzi aspettano: proteggilo dal tempo che scappa.</li>
+    </ul>
+    <h3>Le pagine che userai</h3>
+    <ul>
+      <li><a href="../editor/">Laboratorio</a> — carte (default), blocchi, Python.</li>
+      <li><a href="../tictactoe/">Tris</a>, <a href="../forza4/">Forza 4</a>,
+        <a href="../morra/">Morra</a>, <a href="../navale/">Battaglia navale</a>,
+        <a href="../arena/">Arena dei Mostri</a>, <a href="../othello/">Othello</a> — ogni pagina
+        ha la sua guida «API per il bot».</li>
+      <li><a href="../torneo/">Torneo</a> — il gran finale: 3 giochi a sorte, vince chi ne prende 2.</li>
+      <li><a href="../tictactoe/#impara">Tris + CPU che impara</a> — il pannello segreto della
+        lezione 8 (nota il <code>#impara</code> nella URL).</li>
+    </ul>
+    <h3>Il filo del percorso</h3>
+    <p>Ogni bot è la stessa cosa: <em>riceve lo stato del gioco, risponde una mossa</em>. I tre
+      livelli del Laboratorio sono lo stesso programma a tre altezze: le <strong>carte</strong>
+      sono regole in fila («la prima che scatta decide»), i <strong>blocchi</strong> sono le
+      stesse regole come puzzle, il <strong>Python</strong> è come le scrive un programmatore.
+      Il bottone «Trasforma il mazzo in blocchi» e il codice generato sotto le carte servono
+      proprio a mostrare che non c'è nessun trucco: erano già codice.</p>
+    <p>Durante le partite, sotto il nome del giocatore compare <strong>quale carta ha deciso
+        ogni mossa</strong> (e nel Laboratorio la carta si accende): usalo di continuo per
+      chiedere «perché ha giocato lì?». È il debugger dei dodicenni.</p>
+  </section>
+
+  <section>
+    <h2>Lezione 1 — Il primo bot (Tris)</h2>
+    <p class="meta"><span>🎯 Cos'è un programma: regole in fila, lette dall'alto</span>
+      <span>🕐 90–120 min</span><span>📍 Laboratorio → Carte, gioco Tris</span></p>
+    <h3>Scaletta</h3>
+    <ol>
+      <li><strong>(15')</strong> Tris umano vs umano alla LIM. Poi la domanda: «come spiegheresti
+        a un robot <em>come</em> giochi tu?». Raccogli le risposte alla lavagna: sono già regole.</li>
+      <li><strong>(20')</strong> Laboratorio, livello Carte: si guardano le carte una a una.
+        Ognuna è una regola «se… allora…». Il mazzo si legge dall'alto: la prima che scatta
+        decide. Il codice sotto? C'è già, ci torneremo: per ora basta sapere che le carte SONO
+        quel codice.</li>
+      <li><strong>(30')</strong> Ogni coppia compone il suo mazzo e lo prova contro la CPU
+        («Prova contro la CPU»). Consegna: battere la CPU facile 3 volte di fila.</li>
+      <li><strong>(20')</strong> Esperimento chiave: stesso mazzo, ordine diverso. «🎲 A caso» in
+        cima: cosa succede? Perché?</li>
+      <li><strong>(15')</strong> Sfida alla LIM tra due mazzi di coppie diverse. Il badge della
+        carta spiega ogni mossa: commentatele insieme.</li>
+    </ol>
+    <div class="trappola"><strong>Trappola didattica:</strong> un mazzo con «🏆 Vinci se puoi»
+      DOPO «🎯 Prendi il centro» a volte non vince pur potendo. Non anticiparlo: aspetta che
+      succeda in una partita e chiedi «ma poteva vincere… perché non l'ha fatto?». L'ordine è
+      il programma.</div>
+    <h3>Domande da fare</h3>
+    <ul>
+      <li>«Il bot sta pensando?» (No: sta seguendo le vostre regole. Chi ha pensato siete voi.)</li>
+      <li>«Se il bot perde, di chi è la colpa?» (Delle regole, cioè nostra: e si può correggere.)</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Lezione 2 — L'ordine è la strategia (Tris e Forza 4)</h2>
+    <p class="meta"><span>🎯 Debugging: capire perché il bot fa quello che fa</span>
+      <span>🕐 90 min</span><span>📍 Laboratorio → Carte, Tris poi Forza 4</span></p>
+    <h3>Scaletta</h3>
+    <ol>
+      <li><strong>(15')</strong> Ripasso con quiz: mazzo proiettato, posizione data — «che mossa
+        farà il bot?». Prima si prevede, poi si verifica. (Questo è leggere codice.)</li>
+      <li><strong>(20')</strong> Caccia al bug: prepara un mazzo «rotto» (es. senza «🛡️ Blocca»)
+        e fallo perdere alla LIM. I ragazzi devono diagnosticare dalla partita quale carta manca
+        o è nell'ordine sbagliato.</li>
+      <li><strong>(30')</strong> Si passa a Forza 4: stesse idee, gioco più profondo. Mazzi
+        liberi, prove contro la CPU.</li>
+      <li><strong>(25')</strong> Mini-torneo di Forza 4 tra coppie (già col Pico, se c'è:
+        caricare il bot è un rito che li gasa).</li>
+    </ol>
+    <div class="trappola"><strong>Trappola didattica:</strong> in Forza 4 il bot con
+      vinci+blocca+centro ogni tanto perde «senza motivo». Il motivo c'è: ha messo la pedina
+      sotto la casella vincente dell'avversario. Lascia il mistero aperto: è l'amo per la
+      lezione 3.</div>
+  </section>
+
+  <section>
+    <h2>Lezione 3 — Guardare avanti (Forza 4)</h2>
+    <p class="meta"><span>🎯 Prevedere le conseguenze: simulare una mossa prima di farla</span>
+      <span>🕐 90 min</span><span>📍 Forza 4, carta «⚠️ Non regalare la vittoria»</span></p>
+    <h3>Scaletta</h3>
+    <ol>
+      <li><strong>(15')</strong> Si riapre il mistero della lezione 2 con una posizione alla
+        LIM: la mossa era «legale e sensata», eppure ha perso la partita. Perché?</li>
+      <li><strong>(15')</strong> Idea nuova: prima di muovere, il bot può <em>immaginare</em> la
+        mossa e guardare cosa potrebbe fare l'avversario. La carta «⚠️ Non regalare la
+        vittoria» fa esattamente questo. (Nel codice generato si vede: prova la mossa, controlla,
+        la annulla.)</li>
+      <li><strong>(30')</strong> Le coppie aggiungono la carta e cercano l'ordine giusto. Dove
+        va messa rispetto a vinci/blocca/centro? Si scopre provando.</li>
+      <li><strong>(30')</strong> Torneo di Forza 4. Chi vince di solito ha la carta nuova nel
+        posto giusto: farlo notare.</li>
+    </ol>
+    <h3>Domande da fare</h3>
+    <ul>
+      <li>«Di quante mosse guarda avanti questa carta?» (Una. E i campioni di scacchi? E se il
+        bot guardasse avanti 2, 5, 10 mosse? Si chiama minimax, esiste davvero: è nel livello
+        Python per chi vorrà.)</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Lezione 4 — Memoria e informazione nascosta (Battaglia navale)</h2>
+    <p class="meta"><span>🎯 Il bot ragiona solo su ciò che sa; usare la memoria dei colpi</span>
+      <span>🕐 90 min</span><span>📍 Battaglia navale, carte caccia</span></p>
+    <h3>Scaletta</h3>
+    <ol>
+      <li><strong>(10')</strong> Differenza chiave rispetto a tris/forza4: qui il bot NON vede la
+        scacchiera avversaria. Cosa sa? Solo i colpi già sparati e il loro esito. Strategia =
+        usare bene quella memoria.</li>
+      <li><strong>(20')</strong> Le carte una a una: «🎲 a caso» → «♟️ a scacchiera» (perché
+        funziona? La nave da 2 non può nascondersi), «🎯 insegui i colpi» e «📐 segui la linea».</li>
+      <li><strong>(35')</strong> Esperimento scientifico: quante mosse servono in media per
+        vincere? Ogni coppia prova 5 partite con mazzi diversi e si raccolgono i numeri alla
+        lavagna: caso vs scacchiera vs caccia completa. (Misurare un algoritmo!)</li>
+      <li><strong>(25')</strong> Sfide tra coppie alla LIM.</li>
+    </ol>
+    <div class="trappola"><strong>Trappola didattica:</strong> «insegui i colpi» senza «segui la
+      linea» spreca colpi ai lati di una nave lunga. Si vede benissimo in partita: fermati su
+      quel momento e chiedi come farebbe un umano.</div>
+  </section>
+
+  <section>
+    <h2>Lezione 5 — Rischio, probabilità e avversari che cambiano (Morra e Arena)</h2>
+    <p class="meta"><span>🎯 Valore atteso e lettura dell'avversario</span>
+      <span>🕐 90–120 min</span><span>📍 Morra cinese, poi Arena dei Mostri</span></p>
+    <h3>Scaletta</h3>
+    <ol>
+      <li><strong>(20')</strong> Morra: esiste una strategia per vincere sempre? No — ma se
+        l'avversario ha delle abitudini… Le carte «batti la sua preferita» e «se perdo, batto la
+        sua ultima» leggono i pattern. Contro «🎲 a caso» nessuno vince: perché?</li>
+      <li><strong>(30')</strong> Arena: il ciclo dei tipi (fuoco→erba→elettro→acqua) alla
+        lavagna. Attacco forte (potenza alta, può fallire) o preciso (sempre a segno)? Conti
+        alla mano: potenza × probabilità = danno atteso. La carta «💥 L'attacco più efficace» fa
+        proprio quel conto.</li>
+      <li><strong>(30')</strong> Mazzi liberi sull'Arena: quando conviene cambiare mostro?
+        Quando difendersi? («🛡️ Para il colpo del KO» + «sono più lento?»)</li>
+      <li><strong>(20')</strong> Sfide alla LIM con telecronaca: un ragazzo commenta le scelte
+        dei bot leggendo i badge delle carte.</li>
+    </ol>
+  </section>
+
+  <section>
+    <h2>Lezione 6 — Strategia profonda: l'ingordo perde (Othello)</h2>
+    <p class="meta"><span>🎯 Le strategie ovvie possono essere sbagliate; contano le posizioni,
+        non il bottino</span><span>🕐 90–120 min</span><span>📍 Othello</span></p>
+    <h3>Scaletta</h3>
+    <ol>
+      <li><strong>(15')</strong> Regole in due minuti alla LIM (la pagina le mostra: mosse legali
+        suggerite). Umano vs umano una partita veloce.</li>
+      <li><strong>(15')</strong> Sondaggio: «qual è la strategia migliore?». Vincerà «mangia più
+        pedine possibile». Bene: mettiamola alla prova.</li>
+      <li><strong>(30')</strong> Esperimento: mazzo solo-«😋 Mangia il più possibile» contro
+        mazzo «👑 Prendi l'angolo + 🚧 Non regalare gli angoli + 😋». Più partite, si contano le
+        vittorie. L'ingordo perde quasi sempre.</li>
+      <li><strong>(20')</strong> Perché? Alla LIM: un disco nell'angolo non può più essere
+        girato. Le caselle accanto all'angolo lo regalano. Mangiare tanto subito = dare
+        all'avversario tante mosse buone. Provocazione finale: la carta «🤏 Mangia il meno
+        possibile» — i campioni fanno così davvero.</li>
+      <li><strong>(20')</strong> Mazzi liberi e sfide. Chi batte la CPU difficile?</li>
+    </ol>
+    <div class="trappola"><strong>Trappola didattica:</strong> è LA lezione del corso: la
+      strategia «ovvia» misurata e smentita dai fatti. Non svelare il finale prima
+      dell'esperimento, o si rovina tutto.</div>
+  </section>
+
+  <section>
+    <h2>Lezione 7 — Da carte a blocchi a Python</h2>
+    <p class="meta"><span>🎯 Scoprire che è sempre stato codice; prima modifica a mano</span>
+      <span>🕐 90–120 min</span><span>📍 Laboratorio, tutti e tre i livelli</span></p>
+    <h3>Scaletta</h3>
+    <ol>
+      <li><strong>(15')</strong> Ogni coppia riprende il suo mazzo migliore e preme
+        «🧩 Trasforma il mazzo in blocchi»: stesse regole, forma diversa. Si confrontano
+        fianco a fianco.</li>
+      <li><strong>(20')</strong> Nei blocchi: aggiungere una regola nuova che tra le carte non
+        c'era (es. un <code>se… e… allora</code> con due condizioni). Il codice generato si
+        aggiorna sotto i loro occhi.</li>
+      <li><strong>(30')</strong> Nel Python (livello Carte, riquadro del codice): trovare la
+        propria strategia dentro <code>decidi()</code>. Prima modifica a mano guidata: cambiare
+        un numero (la colonna preferita, una soglia), rompere apposta l'indentazione e leggere
+        l'errore — ora parla italiano ed è un amico che indica dove guardare.</li>
+      <li><strong>(30')</strong> Upload sul Pico e partite vere. Il rito: il bot ora vive
+        nell'oggetto, il PC può anche spegnersi.</li>
+    </ol>
+    <h3>Domande da fare</h3>
+    <ul>
+      <li>«Cosa c'era di diverso tra carte, blocchi e Python?» (Niente: tre vestiti dello stesso
+        programma. I programmatori usano il testo perché è il più potente dei tre.)</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Lezione 8 — Il torneo, e cos'è davvero un'AI</h2>
+    <p class="meta"><span>🎯 Gran finale + il salto concettuale: regole scritte vs regole
+        imparate</span><span>🕐 120 min</span><span>📍 Torneo, poi Tris con
+        <code>#impara</code></span></p>
+    <h3>Scaletta</h3>
+    <ol>
+      <li><strong>(50')</strong> <a href="../torneo/">Torneo</a> di classe alla LIM: ogni coppia
+        col suo Pico, 3 giochi a sorte, vince chi ne prende 2. Tabellone alla lavagna.</li>
+      <li><strong>(10')</strong> Domanda a freddo: «i vostri bot sono intelligenze artificiali?»
+        Discussione libera, nessuna risposta giusta per ora.</li>
+      <li><strong>(25')</strong> Demo: <a href="../tictactoe/#impara">tris con la CPU che
+          impara</a>. All'inizio gioca malissimo (fatelo vedere!). Poi «50 partite lampo» un paio
+        di volte, con la barra che sale. Poi di nuovo contro un ragazzo: è diventata brava.
+        <strong>Nessuno le ha scritto le regole</strong>: per ogni situazione ha pesi sulle
+        mosse, vincere li rinforza, perdere li indebolisce. (È il MENACE del 1961: si faceva
+        con scatole di fiammiferi e perline — raccontatelo, è una storia bellissima.)</li>
+      <li><strong>(20')</strong> Chiusura del cerchio: i vostri bot = regole scritte da voi
+        (l'informatica classica). La CPU che impara = regole trovate dall'esperienza
+        (il machine learning). ChatGPT e simili? La seconda famiglia, con miliardi di pesi e
+        montagne di esempi invece di 900 situazioni di tris. Adesso la parola «addestrare»
+        significa qualcosa di preciso.</li>
+      <li><strong>(15')</strong> Premiazione e ultima domanda: «il bot che impara può diventare
+        più bravo di chi l'ha programmato?» (Sì: è già successo qui, e succede nel mondo. Cosa
+        ne pensate?)</li>
+    </ol>
+    <div class="trappola"><strong>Trappola didattica:</strong> resisti alla tentazione di
+      spiegare il rinforzo PRIMA della demo. L'ordine giusto è: vederla giocare male → vederla
+      migliorare → chiedersi come. La spiegazione arriva quando la domanda è già nella stanza.</div>
+  </section>
+
+  <section>
+    <h2>Appunti sparsi</h2>
+    <ul>
+      <li><strong>Se una lezione salta</strong>: il percorso minimo è 1 → 2 → 6 → 8 (primo bot,
+        ordine, Othello, torneo+AI). Le altre si innestano dove c'è tempo.</li>
+      <li><strong>Errori dei bot</strong>: se un bot «perde a tavolino», il messaggio in pagina
+        dice perché (codice in errore, troppo lento, mossa non valida) in un italiano da
+        dodicenni. Trattali come momenti d'oro, non incidenti: il debugging È la materia.</li>
+      <li><strong>Scacchi</strong>: la pagina esiste (<code>chess/</code>, via URL diretto) ma è
+        fuori dal percorso: troppo per le medie. Per un ragazzo che vola, è un'ottima sfida
+        personale.</li>
+      <li><strong>Differenziazione</strong>: le carte non hanno soffitto basso — trovare
+        l'<em>ordine</em> ottimo è difficile. Chi corre va sui blocchi (condizioni composte) o
+        sul Python (la guida «API per il bot» di ogni gioco ha una scaletta di idee, fino al
+        minimax).</li>
+      <li><strong>Valutazione</strong>: non «chi vince il torneo» ma: sai prevedere la mossa del
+        tuo bot? Sai spiegare perché ha perso? Sai correggerlo? Le partite proiettate sono
+        un'interrogazione travestita.</li>
+    </ul>
+  </section>
+</body>
+
+</html>

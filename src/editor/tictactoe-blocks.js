@@ -14,6 +14,13 @@ TRIPLE = ((0, 1, 2), (3, 4, 5), (6, 7, 8),
           (0, 3, 6), (1, 4, 7), (2, 5, 8),
           (0, 4, 8), (2, 4, 6))
 ANGOLI = (0, 2, 6, 8)
+REGOLA = None  # quale carta ha deciso l'ultima mossa (la mostra la pagina di gioco)
+
+
+def _carta(nome, mossa):
+    global REGOLA
+    REGOLA = nome
+    return mossa
 
 
 def casella_libera(i):
@@ -80,17 +87,21 @@ const TTT_RUNTIME_TAIL = `    return casella_a_caso()
 
 
 def rispondi(state):
-    global BOARD, ULTIMA_MOSSA
+    global BOARD, ULTIMA_MOSSA, REGOLA
     if state.get("winner") is not None:
         return None  # partita finita
     if state.get("board") is None:
         return None  # annuncio di inizio partita
     BOARD = state["board"]
     ULTIMA_MOSSA = state["lastMove"]
+    REGOLA = None
     mossa = decidi()
     if not casella_libera(mossa):
-        mossa = casella_a_caso()  # rete di sicurezza: mai una mossa invalida
-    return {"move": int(mossa)}
+        mossa = _carta("rete di sicurezza", casella_a_caso())  # mai una mossa invalida
+    risposta = {"move": int(mossa)}
+    if REGOLA is not None:
+        risposta["regola"] = REGOLA
+    return risposta
 `
 
 LAB_GAMES.tictactoe = {
@@ -219,26 +230,31 @@ LAB_GAMES.tictactoe = {
       label: '🏆 Vinci se puoi',
       hint: 'Se una casella completa il tuo tris, giocala.',
       code: 'if posso_vincere():\n  return mossa_vincente()',
+      xml: '<block type="controls_if"><value name="IF0"><block type="ttt_posso_vincere"></block></value><statement name="DO0"><block type="ttt_gioca"><value name="CASELLA"><block type="ttt_mossa_vincente"></block></value></block></statement></block>',
     },
     blocca: {
       label: "🛡️ Blocca l'avversario",
       hint: "Se l'avversario ha un tris pronto, rovinaglielo.",
       code: 'if avversario_puo_vincere():\n  return mossa_che_blocca()',
+      xml: '<block type="controls_if"><value name="IF0"><block type="ttt_avversario_puo_vincere"></block></value><statement name="DO0"><block type="ttt_gioca"><value name="CASELLA"><block type="ttt_mossa_che_blocca"></block></value></block></statement></block>',
     },
     centro: {
       label: '🎯 Prendi il centro',
       hint: 'La casella in mezzo tocca 4 linee: se è libera, prendila.',
       code: 'if casella_libera(4):\n  return 4',
+      xml: '<block type="controls_if"><value name="IF0"><block type="ttt_casella_libera"><value name="CASELLA"><block type="ttt_centro"></block></value></block></value><statement name="DO0"><block type="ttt_gioca"><value name="CASELLA"><block type="ttt_centro"></block></value></block></statement></block>',
     },
     angolo: {
       label: '📐 Prendi un angolo',
       hint: 'Gli angoli toccano 3 linee: meglio dei lati.',
       code: 'if angolo_libero_esiste():\n  return un_angolo_libero()',
+      xml: '<block type="controls_if"><value name="IF0"><block type="ttt_angolo_esiste"></block></value><statement name="DO0"><block type="ttt_gioca"><value name="CASELLA"><block type="ttt_angolo_libero"></block></value></block></statement></block>',
     },
     caso: {
       label: '🎲 Gioca a caso',
       hint: 'Una casella libera qualsiasi.',
       code: 'return casella_a_caso()',
+      xml: '<block type="ttt_gioca"><value name="CASELLA"><block type="ttt_casella_a_caso"></block></value></block>',
     },
   },
   starterDeck: ['vinci', 'blocca', 'centro', 'caso'],

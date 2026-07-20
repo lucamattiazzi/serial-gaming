@@ -20,6 +20,7 @@ class PicoSerial {
     this.reader = null
     this.writer = null
     this.isConnected = false
+    this.lastError = null // ultimo errore Python stampato dal bot, in forma comprensibile
     this.messageHandler = () => { }
     this.disconnectHandler = () => { }
     this.identity = null // risposta all'hello: {hello, name, id, bots, router}
@@ -141,6 +142,7 @@ class PicoSerial {
         for (const line of lines) {
           if (!line.trim()) continue
           this.logMessage(line.trim(), 'info')
+          this._captureError(line.trim())
           if (this._captureIdentity(line)) continue
           this.messageHandler(line)
         }
@@ -154,11 +156,21 @@ class PicoSerial {
     }
   }
 
+  // Se il bot sul Pico va in errore, MicroPython stampa il traceback sulla
+  // seriale: lo si intercetta e traduce, così la pagina di gioco può dire
+  // "il codice è andato in errore" invece di un fuorviante "tempo scaduto".
+  _captureError(line) {
+    if (!/^Traceback |^\s*File "|^[A-Za-z_]+(Error|Exception)\b/.test(line)) return
+    if (/^Traceback |^\s*File "/.test(line)) return // righe di contorno: si aspetta quella finale
+    this.lastError = typeof friendlyBotError === 'function' ? friendlyBotError(line) : line
+  }
+
   async sendMessage(message) {
     if (!this.isConnected || !this.writer) {
       this.logMessage('non connesso, messaggio non inviato', 'error')
       return
     }
+    this.lastError = null
 
     try {
       const data = new TextEncoder().encode(message + '\n')

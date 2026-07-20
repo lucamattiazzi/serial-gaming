@@ -85,12 +85,40 @@
 
   <p id="status-display">Scegli i giocatori e inizia la partita.</p>
 
+  <!-- Pannello della CPU che impara: compare solo con #impara nella URL -->
+  <section id="impara-panel" class="impara" hidden>
+    <h2>🧠 La CPU che impara</h2>
+    <p>Questo bot <strong>non conosce nessuna strategia</strong>: per ogni situazione della
+      scacchiera tiene un peso per ogni mossa, e sceglie a sorte in base ai pesi. Quando vince,
+      le mosse di quella partita si rinforzano; quando perde, si indeboliscono. Nessuno gli ha
+      scritto le regole: le sta trovando da solo, giocando. Si chiama
+      <em>apprendimento per rinforzo</em>, ed è un'idea alla base di molte AI vere.</p>
+    <div class="impara-stats">
+      <span id="impara-games"></span>
+      <span id="impara-record"></span>
+      <span id="impara-boxes"></span>
+    </div>
+    <div class="impara-bar-row">
+      <span id="impara-recent"></span>
+      <div class="impara-bar"><div id="impara-bar-fill"></div></div>
+    </div>
+    <div class="impara-actions">
+      <button id="impara-train-random" class="btn">🎓 50 partite lampo vs CPU facile</button>
+      <button id="impara-train-perfect" class="btn">⚔️ 50 partite lampo vs CPU difficile</button>
+      <button id="impara-reset" class="btn">🧽 Dimentica tutto</button>
+    </div>
+    <p class="impara-hint">Per sfidarla dal vivo scegli «CPU che impara 🧠» come giocatore qui
+      sopra. La memoria resta salvata in questo browser anche chiudendo la pagina.</p>
+  </section>
+
   <script src="../picoserial.js"></script>
   <script src="../bot-templates.js"></script>
   <script src="../emupico.js"></script>
+  <script src="../regole.js"></script>
   <script src="../config.js"></script>
   <script src="../botname.js"></script>
   <script src="script.js"></script>
+  <script src="impara.js"></script>
 </body>
 
 </html>
