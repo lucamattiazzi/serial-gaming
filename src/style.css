@@ -1,27 +1,28 @@
 /* ── Design tokens condivisi ─────────────────────────────── */
 :root {
-  --bg: #0f1117;
-  --bg-soft: #171a23;
-  --bg-card: #1c2030;
-  --border: #2c3245;
-  --text: #e8eaf2;
-  --text-dim: #9aa1b5;
-  --accent: #4fd1c5;
-  --accent-soft: rgba(79, 209, 197, 0.12);
-  --accent-2: #ff8cc6;
-  --x-color: #5eb1ff;
-  --o-color: #ffb454;
-  --danger: #ff6b6b;
+  color-scheme: dark;
+  --bg: #101620;
+  --bg-soft: #171f2c;
+  --bg-card: #1b2533;
+  --border: #344255;
+  --text: #e5edf5;
+  --text-dim: #abbacc;
+  --accent: #80d5b6;
+  --accent-soft: #203c35;
+  --accent-2: #f2b181;
+  --x-color: #81bfff;
+  --o-color: #ffc078;
+  --danger: #ff8f8f;
   --radius: 14px;
   --font-mono: "SF Mono", "Fira Code", Menlo, Consolas, monospace;
-  --font-fun: "Chalkboard SE", "Comic Sans MS", "Comic Neue", "Segoe UI", sans-serif;
+  --font-fun: "Avenir Next", "Trebuchet MS", "Segoe UI", sans-serif;
   /* palette giocosa per le card dei giochi */
-  --c-blue: #5eb1ff;
-  --c-pink: #ff8cc6;
-  --c-amber: #ffb454;
-  --c-green: #8ce68c;
-  --c-purple: #b39dff;
-  --c-teal: #4fd1c5;
+  --c-blue: #81bfff;
+  --c-pink: #ef9cc7;
+  --c-amber: #ffc078;
+  --c-green: #a0d993;
+  --c-purple: #b9a3ef;
+  --c-teal: #80d5b6;
 }
 
 * {
@@ -31,12 +32,7 @@
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  background:
-    radial-gradient(900px 520px at 6% -8%, rgba(79, 209, 197, 0.10), transparent 60%),
-    radial-gradient(820px 520px at 100% -2%, rgba(179, 157, 255, 0.10), transparent 55%),
-    radial-gradient(720px 520px at 50% 118%, rgba(255, 140, 198, 0.07), transparent 60%),
-    var(--bg);
-  background-attachment: fixed;
+  background: var(--bg);
   color: var(--text);
   line-height: 1.6;
 }
@@ -93,7 +89,7 @@ pre code {
   border-color: var(--accent);
   background: var(--accent-soft);
   text-decoration: none;
-  transform: translateY(-2px) rotate(-1deg);
+  transform: translateY(-1px);
 }
 
 .btn:active:not(:disabled) {
@@ -106,15 +102,15 @@ pre code {
 }
 
 .btn.primary {
-  background: linear-gradient(135deg, #5fe0d2, #4fd1c5);
-  border-color: transparent;
-  color: #08251f;
-  box-shadow: 0 6px 16px rgba(79, 209, 197, 0.28);
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #102d24;
+  box-shadow: 0 3px 0 #3e8b70;
 }
 
 .btn.primary:hover:not(:disabled) {
-  background: linear-gradient(135deg, #74e9dc, #5bd8cc);
-  box-shadow: 0 10px 24px rgba(79, 209, 197, 0.38);
+  background: #a3e8ce;
+  color: #102d24;
 }
 
 .btn.small {
@@ -521,4 +517,16 @@ h2,
 .emu-code:focus {
   outline: none;
   border-color: var(--accent);
+}
+
+/* L'attributo hidden deve prevalere anche sui layout flex e grid. */
+[hidden] { display: none !important; }
+:focus-visible { outline: 3px solid #81bfff; outline-offset: 4px; }
+button, input, select, textarea { font-family: inherit; }
+.btn, select, summary { min-height: 44px; }
+summary { cursor: pointer; }
+.skip-link { position: fixed; top: -100px; left: 16px; z-index: 100; padding: 12px 20px; background: var(--bg-card); border: 2px solid var(--accent); border-radius: 8px; }
+.skip-link:focus { top: 12px; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
 }

@@ -4,7 +4,7 @@ import { resolve, join, relative, dirname } from 'path'
 import { readdirSync, copyFileSync, mkdirSync } from 'fs'
 
 // App multi-pagina con tutto il sorgente in src/ (che è anche la root di
-// Vite): la home è React (app.html), le pagine di gioco restano quelle
+// Vite): la home è React (index.html e alias app.html), le pagine di gioco restano quelle
 // esistenti (script classici, già collaudati) e Vite le impacchetta come
 // entry statiche. `vite build` produce un sito interamente statico in
 // dist/, senza alcun Python.
@@ -17,7 +17,8 @@ const input = {
   home: page('app.html'),
   torneo: page('torneo/index.html'),
   editor: page('editor/index.html'),
-  lezioni: page('lezioni/index.html'), // guida per il docente, non linkata dalla home
+  remote: page('remote/index.html'),
+  lezioni: page('lezioni/index.html'),
 }
 for (const game of GAMES) {
   input[game] = page(`${game}/index.html`)
@@ -32,6 +33,7 @@ for (const game of GAMES) {
 function copyClassicAssets() {
   const srcDir = resolve(__dirname, 'src')
   const outDir = resolve(__dirname, 'dist')
+  const modules = new Set([page('editor/code-editor.js'), page('remote/script.js')])
   const wanted = (name) => name.endsWith('.js') || name.endsWith('.css')
 
   function walk(dir, files = []) {
@@ -39,7 +41,7 @@ function copyClassicAssets() {
       const full = join(dir, entry.name)
       if (entry.isDirectory()) {
         if (full !== join(srcDir, 'home')) walk(full, files)
-      } else if (wanted(entry.name)) {
+      } else if (wanted(entry.name) && !modules.has(full)) {
         files.push(full)
       }
     }
@@ -61,6 +63,7 @@ function copyClassicAssets() {
 export default defineConfig({
   root: 'src',
   plugins: [react(), copyClassicAssets()],
+  server: { proxy: { '/ws': { target: 'ws://127.0.0.1:3001', ws: true } } },
   build: {
     outDir: resolve(__dirname, 'dist'),
     emptyOutDir: true,

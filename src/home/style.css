@@ -1,0 +1,151 @@
+.landing { max-width: 1184px; margin: auto; padding: 0 40px; }
+.site-header { display: flex; align-items: center; justify-content: space-between; gap: 24px; min-height: 100px; border-bottom: 1px solid var(--border); }
+.site-brand { display: inline-flex; align-items: center; color: var(--text); font-size: 24px; font-weight: 800; letter-spacing: -1px; }
+.site-brand:hover { text-decoration: none; }
+.site-brand > span:not(.brand-bot):not(.brand-dot) { font-weight: 450; }
+.brand-bot { width: 46px; height: 46px; margin-right: 8px; color: var(--accent); }
+.brand-bot svg { width: 100%; height: 100%; }
+.brand-dot { color: var(--accent); }
+.site-header nav { display: flex; gap: 26px; align-items: center; }
+.site-header nav a, .teacher-link { padding: 12px 0; color: var(--text-dim); font-size: 14px; font-weight: 650; }
+.site-header nav a[aria-current] { color: var(--accent); box-shadow: 0 2px var(--accent); }
+.teacher-link { display: flex; align-items: center; gap: 16px; }
+.welcome { display: grid; grid-template-columns: 1.15fr 1fr; align-items: center; gap: 30px; padding: 68px 0 58px; }
+.eyebrow { display: block; font-size: 10px; font-weight: 750; letter-spacing: 1.7px; color: var(--accent); }
+.welcome .eyebrow { display: flex; align-items: center; gap: 8px; }
+.little-dot { width: 7px; height: 7px; background: var(--accent); border-radius: 50%; }
+.welcome h1 { font-size: clamp(36px, 4.1vw, 53px); line-height: 1.14; letter-spacing: -2px; margin: 23px 0 20px; font-weight: 750; }
+.welcome h1 > span { color: var(--accent); }
+.welcome-copy > p { max-width: 420px; font-size: 16px; line-height: 1.8; color: var(--text-dim); }
+.hero-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 22px; margin-top: 26px; }
+.landing .btn { border-radius: 9px; font-size: 13px; padding: 13px 18px; }
+.hero-actions .primary { display: flex; gap: 20px; }
+.text-link { color: var(--text); font-size: 13px; font-weight: 650; }
+.welcome-copy .hero-footnote { font-size: 11px; margin-top: 16px; }
+.hero-sketch { position: relative; height: 365px; background-image: radial-gradient(#344255 1px, transparent 1px); background-size: 18px 18px; border-radius: 50%; color: var(--accent); }
+.sketch-note { position: absolute; top: 12px; left: 38px; transform: rotate(-6deg); font-size: 15px; font-family: var(--font-fun); }
+.sketch-board { position: absolute; display: grid; grid-template-columns: repeat(3, 1fr); top: 68px; left: 72px; width: 220px; height: 220px; padding: 12px; transform: rotate(-8deg); background: #fffef9; border: 2px solid #335d4d; border-radius: 17px; box-shadow: 8px 9px 0 #dce6d9; }
+.sketch-board span { display: flex; align-items: center; justify-content: center; font-size: 50px; line-height: 1; font-weight: 550; border-right: 2px solid #c1cec1; border-bottom: 2px solid #c1cec1; }
+.sketch-board span:nth-child(3n) { border-right: 0; }
+.sketch-board span:nth-child(n+7) { border-bottom: 0; }
+.sketch-board .circle-mark { color: #cf7850; }
+.rule-sticker { position: absolute; top: 70px; right: 0; display: grid; gap: 8px; background: #ffedaa; border: 1px solid #c7ad57; padding: 14px 18px; border-radius: 9px; box-shadow: 3px 5px 0 #eadca8; transform: rotate(8deg); font-size: 12px; }
+.rule-sticker strong { font-size: 15px; }
+.rule-sticker strong span { margin-left: 10px; }
+.bot-sticker { position: absolute; right: 5px; bottom: 36px; transform: rotate(7deg); }
+.bot-sticker svg { display: block; width: 120px; height: 120px; }
+.bot-sticker > span { display: block; background: white; padding: 4px 12px; border-radius: 8px; font-size: 12px; text-align: center; border: 1px solid var(--border); }
+.sketch-star { position: absolute; top: 15px; right: 55px; color: #cf7850; font-size: 37px; }
+.sketch-caption { position: absolute; bottom: 12px; left: 28px; font-family: var(--font-fun); font-size: 14px; transform: rotate(-4deg); }
+.learning-path { list-style: none; margin: 0; padding: 26px 0; display: grid; grid-template-columns: repeat(3, 1fr); border-block: 1px solid var(--border); gap: 30px; }
+.learning-path li { display: flex; gap: 15px; align-items: center; }
+.step-number { font-family: var(--font-mono); font-size: 12px; border: 1px solid var(--border); background: var(--accent-soft); border-radius: 11px; color: var(--accent); padding: 10px; }
+.learning-path strong { font-size: 13px; }
+.learning-path p { color: var(--text-dim); font-size: 12px; margin: 2px 0 0; }
+.game-library { padding-top: 50px; }
+.section-heading { display: flex; justify-content: space-between; gap: 20px; align-items: end; }
+.section-heading h2 { font-size: 28px; line-height: 1.2; letter-spacing: -.8px; margin: 12px 0 0; }
+.section-aside { color: var(--text-dim); font-size: 12px; padding-bottom: 4px; }
+.game-filters { display: flex; align-items: center; gap: 8px; margin: 25px 0 24px; flex-wrap: wrap; }
+.game-filters button { border: 1px solid var(--border); border-radius: 7px; padding: 8px 14px; min-height: 40px; color: var(--text-dim); background: transparent; font: inherit; font-size: 12px; cursor: pointer; }
+.game-filters button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #102d24; }
+.game-filters > span { margin-left: auto; color: var(--text-dim); font-size: 11px; }
+.game-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
+.activity-card { min-width: 0; border: 1px solid var(--border); background: var(--bg-card); border-radius: 13px; overflow: hidden; transition: transform .15s, box-shadow .15s; }
+.activity-card:hover { transform: translateY(-3px); box-shadow: 0 8px 20px #254e3e0c; }
+.activity-art { position: relative; height: 135px; display: flex; align-items: center; justify-content: center; background: #253c32; overflow: hidden; color: #b1d5a1; }
+.activity-art > span { font-size: 64px; font-weight: 650; letter-spacing: 4px; transform: rotate(-9deg); }
+.activity-art i { position: absolute; left: 40px; top: 22px; opacity: .4; font-size: 24px; font-style: normal; }
+.activity-art b { position: absolute; right: 30px; bottom: 8px; font-size: 54px; transform: rotate(13deg); opacity: .25; }
+.activity-morra .activity-art { background: #413622; color: #e6c984; }
+.activity-morra .activity-art > span { font-size: 48px; }
+.activity-forza4 .activity-art { background: #243c4e; color: #87c0e2; }
+.activity-forza4 .activity-art > span { color: #c1784a; text-shadow: 0 24px #447087, 30px -24px #447087; transform: rotate(-12deg) translateY(-10px); font-size: 45px; }
+.activity-navale .activity-art { background: #203c40; color: #8ed8df; }
+.activity-arena .activity-art { background: #44312b; color: #e0a783; }
+.activity-othello .activity-art { background: #332d48; color: #bda9e2; }
+.activity-content { padding: 20px; }
+.level-label { color: var(--text-dim); font-size: 10px; font-weight: 600; }
+.activity-card h3 { font-size: 19px; margin: 7px 0; letter-spacing: -.4px; }
+.activity-card p { color: var(--text-dim); font-size: 13px; line-height: 1.7; margin: 0; min-height: 46px; }
+.activity-links { display: flex; justify-content: space-between; gap: 16px; border-top: 1px solid var(--border); margin-top: 18px; padding-top: 8px; }
+.activity-links a { display: inline-flex; gap: 12px; align-items: center; min-height: 40px; font-size: 12px; font-weight: 650; }
+.activity-links a + a { color: var(--text-dim); }
+.teacher-banner { display: flex; gap: 24px; align-items: center; margin-top: 40px; border: 1px solid #345047; background: #1b2e2a; border-radius: 12px; padding: 28px; }
+.teacher-icon { font-size: 48px; color: var(--accent); }
+.teacher-banner .eyebrow { font-size: 9px; }
+.teacher-banner h2 { font-size: 21px; letter-spacing: -.5px; margin: 7px 0; }
+.teacher-banner p { color: var(--text-dim); font-size: 12px; margin: 0; }
+.teacher-banner .btn { margin-left: auto; white-space: nowrap; background: var(--bg-card); }
+.tournament-link { color: var(--text-dim); text-align: center; font-size: 12px; margin: 24px 0 40px; }
+.site-footer { padding: 25px 0; border-top: 1px solid var(--border); display: flex; justify-content: space-between; gap: 20px; font-size: 10px; color: var(--text-dim); }
+.site-footer strong { color: var(--text); margin-right: 12px; }
+.site-footer a { color: var(--text-dim); }
+.explanation { max-width: 760px; padding: 60px 0; margin: auto; }
+.explanation h1 { font-size: clamp(32px, 5vw, 46px); line-height: 1.2; letter-spacing: -1.5px; }
+.explanation-lead { color: var(--text-dim); font-size: 19px; }
+.explanation-steps { list-style: none; padding: 0; display: grid; gap: 15px; margin: 30px 0; }
+.explanation-steps li { background: var(--bg-card); border: 1px solid var(--border); padding: 22px; border-radius: 12px; }
+.explanation p { line-height: 1.8; }
+.explanation-steps p, .discovery-note p { margin-bottom: 0; }
+.discovery-note { background: #3d3524; padding: 24px; border-radius: 12px; }
+.explanation details { margin: 24px 0; }
+.explanation summary { cursor: pointer; padding: 12px 0; font-weight: 650; }
+@media (min-width: 1400px) { .welcome { padding-block: 80px; } }
+@media (max-width: 900px) {
+  .landing { padding-inline: 24px; }
+  .site-header { gap: 16px; flex-wrap: wrap; padding-block: 20px; }
+  .site-header nav { gap: 18px; }
+  .teacher-link { display: none; }
+  .welcome { gap: 12px; }
+  .sketch-board { left: 20px; width: 190px; height: 190px; }
+  .rule-sticker { top: 48px; padding: 10px; font-size: 10px; }
+  .rule-sticker strong { font-size: 12px; }
+  .sketch-note { left: 0; font-size: 12px; }
+  .section-aside { display: none; }
+  .game-grid { gap: 16px; }
+  .activity-content { padding: 16px; }
+  .activity-card p { min-height: 66px; }
+  .teacher-banner { gap: 16px; flex-wrap: wrap; }
+}
+@media (max-width: 640px) {
+  .landing { padding-inline: 20px; }
+  .site-header { justify-content: center; gap: 6px; }
+  .site-brand { font-size: 23px; }
+  .site-header nav { justify-content: center; width: 100%; gap: 24px; }
+  .site-header nav a { font-size: 13px; }
+  .welcome { grid-template-columns: 1fr; padding: 36px 0; }
+  .welcome h1 { font-size: 40px; }
+  .welcome-copy > p { font-size: 15px; }
+  .hero-sketch { height: 300px; max-width: 370px; width: 100%; margin: 12px auto 0; }
+  .sketch-board { left: 40px; top: 50px; }
+  .rule-sticker { top: 35px; }
+  .sketch-caption { bottom: 0; left: 10px; font-size: 12px; }
+  .bot-sticker { right: 5px; bottom: 15px; }
+  .learning-path { grid-template-columns: 1fr; gap: 20px; }
+  .learning-path strong { font-size: 15px; }
+  .learning-path p { font-size: 13px; }
+  .game-library { padding-top: 34px; }
+  .section-heading h2 { font-size: 25px; }
+  .game-filters > span { width: 100%; margin: 5px 0 0; }
+  .game-filters { gap: 6px; }
+  .game-filters button { padding-inline: 10px; }
+  .game-grid { grid-template-columns: 1fr; }
+  .activity-art { height: 150px; }
+  .activity-content { padding: 20px; }
+  .activity-card p { min-height: auto; font-size: 15px; }
+  .activity-links a { font-size: 14px; }
+  .level-label { font-size: 12px; }
+  .teacher-banner { padding: 22px; }
+  .teacher-icon { display: none; }
+  .teacher-banner .btn { margin-left: 0; }
+  .teacher-banner p { font-size: 14px; }
+  .site-footer { flex-direction: column; gap: 10px; font-size: 11px; }
+}
+
+.sketch-board { color: #245a49; }
+.rule-sticker { color: #493d15; }
+.bot-sticker > span { background: var(--bg-card); }
+
+.site-header nav { flex-wrap: wrap; }
+@media (max-width: 640px) { .site-header nav { gap: 14px; } }

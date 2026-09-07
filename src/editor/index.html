@@ -7,10 +7,10 @@
   <title>Laboratorio — Serial Gaming</title>
   <link rel="stylesheet" href="../style.css">
   <link rel="stylesheet" href="style.css">
-  <script src="https://cdn.jsdelivr.net/npm/blockly/blockly_compressed.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/blockly/blocks_compressed.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/blockly/python_compressed.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/blockly/msg/it.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/blockly@13.2.1/blockly_compressed.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/blockly@13.2.1/blocks_compressed.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/blockly@13.2.1/python_compressed.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/blockly@13.2.1/msg/it.js"></script>
 </head>
 
 <body class="lab">
@@ -23,24 +23,38 @@
     </nav>
   </header>
 
-  <!-- ── BARRA AZIONI COMUNE (in cima: connetti e carica sempre a portata) ── -->
+  <main id="contenuto">
+  <header class="lab-heading">
+    <span class="lab-eyebrow">IL TUO ANGOLO DEGLI ESPERIMENTI</span>
+    <h1>Una carta alla volta, nasce il tuo bot.</h1>
+    <p>Scegli le istruzioni. Cambia il loro ordine. Scopri come gioca il tuo bot.</p>
+  </header>
   <div class="action-bar">
-    <button id="connect-button" class="btn connect">🔌 Connetti RP2040</button>
-    <span class="conn-status" id="conn-status">non connesso</span>
+    <label for="bot-name">Il tuo bot si chiama</label>
     <input id="bot-name" class="bot-name-input" type="text" maxlength="24"
-      placeholder="Nome del bot" aria-label="Nome del bot">
-    <button id="upload-button" class="btn primary" disabled>🚀 Carica sul Pico</button>
+      placeholder="Es. Capitan Biscotto" aria-label="Nome del bot">
     <span class="spacer"></span>
-    <button id="try-button" class="btn">▶ Prova contro la CPU</button>
+    <span id="save-status" role="status">Le modifiche restano in questo browser.</span>
+    <button id="try-button" class="btn primary">▶ Prova il bot</button>
   </div>
-
-  <pre id="log" hidden></pre>
+  <section class="hardware-panel" aria-labelledby="pico-heading">
+    <h2 id="pico-heading">Dal tuo codice alla sfida: caricalo sul Pico</h2>
+    <p>Collega il tuo RP2040 via USB e carica il bot. Poi sfidatevi con due Pico sullo stesso computer, oppure a distanza.</p>
+    <div class="hardware-actions">
+      <button id="connect-button" class="btn connect">🔌 Connetti RP2040</button>
+      <span class="conn-status" id="conn-status">non connesso</span>
+      <button id="upload-button" class="btn primary" disabled>Carica sul Pico</button>
+    </div>
+    <div class="pico-links"><a href="../torneo/">Sfida con due Pico →</a><a href="../remote/">Sfida a distanza →</a></div>
+    <p id="serial-help" hidden>Questo browser non supporta il collegamento USB. Per il Pico usa Chrome o Edge su computer.</p>
+  </section>
+  <pre id="log" role="log" aria-label="Risultati della prova e messaggi" hidden></pre>
 
   <div class="toolbar" id="game-toolbar">
     <label>Gioco:
       <select id="lab-game" aria-label="Gioco">
-        <option value="forza4" selected>Forza 4</option>
-        <option value="tictactoe">Tris</option>
+        <option value="forza4">Forza 4</option>
+        <option value="tictactoe" selected>Tris</option>
         <option value="morra">Morra cinese</option>
         <option value="navale">Battaglia navale</option>
         <option value="arena">Arena dei Mostri</option>
@@ -51,7 +65,7 @@
   </div>
 
   <!-- ── LIVELLO BLOCCHI ────────────────────────────────────── -->
-  <section id="level-blocchi" class="level">
+  <section id="level-blocchi" class="level" hidden>
     <p class="intro">Costruisci la tua strategia incastrando i blocchi: si leggono dall'alto
       in basso, e il primo «gioca…» che scatta decide la mossa. Se nessuna regola scatta, il
       bot gioca a caso (e non fa mai mosse invalide — in Othello il motore ti passa solo
@@ -69,7 +83,7 @@
       viene salvato come <code>bot_&lt;gioco&gt;.py</code> sul Pico, insieme a un
       <code>main.py</code> «router» che smista i messaggi al bot giusto: sullo stesso Pico
       convivono i bot di tutti i giochi (uno per gioco, l'upload sostituisce solo quello).
-      Attenzione: cambiare template sostituisce tutto il codice.</p>
+      Il lavoro di ogni gioco resta salvato in questo browser. Per uscire dal campo con la tastiera usa Maiusc + Tab.</p>
     <div class="toolbar">
       <select id="template-select" aria-label="Template">
         <option value="tictactoe" selected>Template: Tris (bot casuale)</option>
@@ -84,22 +98,20 @@
         <option value="chess">Template: Scacchi (scheletro)</option>
       </select>
     </div>
-    <textarea id="code" spellcheck="false"></textarea>
+    <textarea id="code" aria-label="Codice Python del bot" spellcheck="false"></textarea>
   </section>
 
   <!-- ── LIVELLO CARTE ──────────────────────────────────────── -->
-  <section id="level-carte" class="level" hidden>
-    <p class="intro">Componi il tuo bot mettendo in fila le carte: si leggono dall'alto in
-      basso e <strong>la prima che scatta decide la mossa</strong>. L'ordine è la strategia!
-      Se nessuna carta scatta, il bot gioca a caso. Poi, se vuoi, <strong>modifica a mano il
-        codice</strong> qui sotto: parti dalle carte e personalizzalo come preferisci.</p>
+  <section id="level-carte" class="level">
+    <p class="intro">Il bot legge le carte <strong>dall’alto verso il basso</strong>.
+      La prima che può usare decide la mossa. Aggiungi una carta e usa le frecce per spostarla: <strong>l’ordine conta!</strong></p>
     <div class="cards-wrap">
       <div class="cards-col">
-        <h3>Carte disponibili <small>(clicca per aggiungere)</small></h3>
+        <h3>1. Scegli le carte <small>Premi una carta per aggiungerla</small></h3>
         <div id="cards-available"></div>
       </div>
       <div class="cards-col">
-        <h3>Il tuo bot <small>(dall'alto in basso)</small></h3>
+        <h3>2. Metti in ordine le idee <small>La prima carta si legge per prima</small></h3>
         <ol id="cards-deck"></ol>
       </div>
     </div>
@@ -107,16 +119,18 @@
       <button id="cards-to-blocks" class="btn">🧩 Trasforma il mazzo in blocchi</button>
       <small>Le stesse regole, come puzzle: il tuo primo passo verso il livello Blocchi.</small>
     </div>
-    <div class="cards-code">
+    <details class="cards-code">
+      <summary>Curiosità: guarda il codice delle tue carte</summary>
       <h3>Codice MicroPython
         <small>(modificalo a piacere — attenzione: se cambi le carte viene riscritto)</small>
       </h3>
-      <textarea id="generated-carte" spellcheck="false"></textarea>
-    </div>
+      <textarea id="generated-carte" aria-label="Codice delle carte" spellcheck="false"></textarea>
+    </details>
   </section>
 
 
   <div id="test-frame"></div>
+  </main>
 
   <script src="../picoserial.js"></script>
   <script src="../router.js"></script>
@@ -132,6 +146,7 @@
   <script src="chess-blocks.js"></script>
   <script src="../config.js"></script>
   <script src="script.js"></script>
+  <script type="module" src="code-editor.js"></script>
 </body>
 
 </html>

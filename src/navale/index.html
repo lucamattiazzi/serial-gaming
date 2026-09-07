@@ -46,12 +46,12 @@
       <h2><span class="side-badge">G2</span> Giocatore 2</h2>
       <select id="type-P2" aria-label="Tipo giocatore 2">
         <option value="human">Umano</option>
-        <option value="pico" selected>RP2040 (seriale)</option>
+        <option value="pico">RP2040 (seriale)</option>
         <option value="emu">RP2040 emulato (Python nel browser)</option>
-        <option value="cpu-random">CPU casuale</option>
+        <option value="cpu-random" selected>CPU casuale</option>
         <option value="cpu-hunter">CPU cacciatrice</option>
       </select>
-      <div class="conn-row" id="conn-row-P2">
+      <div class="conn-row" id="conn-row-P2" hidden>
         <button id="connect-P2" class="btn connect">🔌 Connetti RP2040</button>
         <span class="conn-status" id="conn-P2">non connesso</span>
       </div>

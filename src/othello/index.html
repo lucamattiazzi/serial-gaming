@@ -46,12 +46,12 @@
       <h2><span class="mark mark-w">⚪</span> Bianco</h2>
       <select id="type-W" aria-label="Tipo giocatore Bianco">
         <option value="human">Umano</option>
-        <option value="pico" selected>RP2040 (seriale)</option>
+        <option value="pico">RP2040 (seriale)</option>
         <option value="emu">RP2040 emulato (Python nel browser)</option>
-        <option value="cpu-random">CPU facile</option>
+        <option value="cpu-random" selected>CPU facile</option>
         <option value="cpu-smart">CPU difficile</option>
       </select>
-      <div class="conn-row" id="conn-row-W">
+      <div class="conn-row" id="conn-row-W" hidden>
         <button id="connect-W" class="btn connect">🔌 Connetti RP2040</button>
         <span class="conn-status" id="conn-W">non connesso</span>
       </div>

@@ -1,6 +1,6 @@
 // ── Configurazione del sito ──────────────────────────────────
 // Due flag per decidere cosa è disponibile. Cambia qui e ricarica.
-const SITE_CONFIG = {
+globalThis.SITE_CONFIG = {
   // false = si gioca solo con un RP2040 vero. Durante le partite sparisce
   //         l'opzione "RP2040 emulato" (scrivere codice Python nel browser)
   //         e ogni riferimento all'emulatore marcato data-requires-emulator.

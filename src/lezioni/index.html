@@ -117,20 +117,33 @@
     <h1>📚 Guida per il docente</h1>
     <p class="sub">Otto incontri per scoprire cosa significa programmare — e cosa significa
       «intelligenza artificiale» — scrivendo bot che giocano. Pensata per una classe delle
-      medie, a coppie, incontri da 1,5–2 ore. Questa pagina non è linkata dalla home: è per te.</p>
+      medie, a coppie, incontri da 1,5–2 ore. Per la quinta primaria, comincia dalla proposta breve qui sotto.</p>
   </header>
+
+  <section>
+    <h2>La prima volta: 45–60 minuti, dalla quinta primaria</h2>
+    <p>Una proposta iniziale da adattare alla classe: un computer ogni coppia, internet e nessuna scheda da configurare. Parti solo dal Tris e dalle carte.</p>
+    <ol>
+      <li><strong>10 minuti — Giocare.</strong> Aprite il <a href="../tictactoe/">Tris</a>. Chiedi: «Come capisci se puoi vincere alla prossima mossa?».</li>
+      <li><strong>10 minuti — Spiegare.</strong> Un bambino dà un’istruzione al compagno, che la esegue alla lettera. Scambiate i ruoli.</li>
+      <li><strong>15 minuti — Sperimentare.</strong> Nel <a href="../editor/?game=tictactoe#carte">laboratorio del Tris</a>, cambiate l’ordine di una carta. Prima di premere «Prova il bot», fate una previsione.</li>
+      <li><strong>10 minuti — Raccontare.</strong> Ogni coppia spiega una modifica, cosa si aspettava e cosa ha osservato. Valorizza le spiegazioni, anche quando il bot perde.</li>
+      <li><strong>Se resta tempo.</strong> Trasformate le carte in blocchi e cercate le stesse istruzioni. Python e Pico possono aspettare un incontro successivo.</li>
+    </ol>
+    <p><strong>In coppia:</strong> chi usa il mouse e chi osserva si scambiano ogni 5–10 minuti. Le strategie restano salvate nel browser del computer: su un PC condiviso, la coppia successiva ritroverà quel lavoro. Per conservarlo altrove, copiate il codice.</p>
+  </section>
 
   <section>
     <h2>Prima di iniziare: la checklist</h2>
     <ul>
-      <li><strong>Browser</strong>: serve Chrome o Edge (WebSerial). Provalo sui PC della scuola
+      <li><strong>Browser per il Pico</strong>: serve Chrome o Edge con WebSerial. Provalo sui PC della scuola
         <em>prima</em> della lezione 1: alcuni istituti bloccano browser o porte USB.</li>
-      <li><strong>Schede</strong>: una RP2040 con MicroPython ogni coppia. Meglio le coppie del
+      <li><strong>Schede, per gli incontri con hardware</strong>: una RP2040 con MicroPython ogni coppia. Meglio le coppie del
         singolo: si parlano, si correggono, litigano sull'ordine delle carte (è il punto).</li>
       <li><strong>Prova generale</strong>: connetti una scheda dal Laboratorio, carica un bot,
         gioca una partita. Se qualcosa non va, meglio scoprirlo da soli che davanti a 24 ragazzi.</li>
       <li><strong>Piano B</strong>: senza hardware si lavora lo stesso — le carte, i blocchi e la
-        «Prova contro la CPU» del Laboratorio girano tutti nel browser.</li>
+        «Prova il bot» del Laboratorio girano tutti nel browser.</li>
       <li><strong>Proiettore</strong>: quasi ogni lezione finisce con una sfida alla LIM. È il
         momento che i ragazzi aspettano: proteggilo dal tempo che scappa.</li>
     </ul>
@@ -170,7 +183,7 @@
         decide. Il codice sotto? C'è già, ci torneremo: per ora basta sapere che le carte SONO
         quel codice.</li>
       <li><strong>(30')</strong> Ogni coppia compone il suo mazzo e lo prova contro la CPU
-        («Prova contro la CPU»). Consegna: battere la CPU facile 3 volte di fila.</li>
+        («Prova il bot»). Consegna: battere la CPU facile 3 volte di fila.</li>
       <li><strong>(20')</strong> Esperimento chiave: stesso mazzo, ordine diverso. «🎲 A caso» in
         cima: cosa succede? Perché?</li>
       <li><strong>(15')</strong> Sfida alla LIM tra due mazzi di coppie diverse. Il badge della

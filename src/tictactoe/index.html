@@ -17,6 +17,7 @@
     <a class="api-link" href="docs.html">API per il bot</a>
   </header>
 
+  <p class="game-intro">Metti tre simboli in fila, in colonna o in diagonale. Gioca con calma: qui non c’è fretta.</p>
   <section id="setup">
     <div class="player-card" id="card-X">
       <h2><span class="mark mark-x">X</span> Giocatore X</h2>
@@ -46,12 +47,12 @@
       <h2><span class="mark mark-o">O</span> Giocatore O</h2>
       <select id="type-O" aria-label="Tipo giocatore O">
         <option value="human">Umano</option>
-        <option value="pico" selected>RP2040 (seriale)</option>
+        <option value="pico">RP2040 (seriale)</option>
         <option value="emu">RP2040 emulato (Python nel browser)</option>
-        <option value="cpu-random">CPU facile</option>
+        <option value="cpu-random" selected>CPU facile</option>
         <option value="cpu-perfect">CPU difficile</option>
       </select>
-      <div class="conn-row" id="conn-row-O">
+      <div class="conn-row" id="conn-row-O" hidden>
         <button id="connect-O" class="btn connect">🔌 Connetti RP2040</button>
         <span class="conn-status" id="conn-O">non connesso</span>
       </div>
@@ -83,7 +84,9 @@
 
   <div id="game-board" class="idle"></div>
 
-  <p id="status-display">Scegli i giocatori e inizia la partita.</p>
+  <p id="status-display" role="status" aria-live="polite">Scegli i giocatori e inizia la partita.</p>
+
+  <a class="lab-next" href="../editor/?game=tictactoe#carte">Ora insegna a un bot a giocare →</a>
 
   <!-- Pannello della CPU che impara: compare solo con #impara nella URL -->
   <section id="impara-panel" class="impara" hidden>

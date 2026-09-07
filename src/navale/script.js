@@ -150,7 +150,7 @@ const boardsEl = document.getElementById('boards')
 // ── Stato di gioco ───────────────────────────────────────────
 const players = {
   P1: { type: PLAYER_TYPES.HUMAN, serial: null, pendingResolve: null },
-  P2: { type: PLAYER_TYPES.PICO, serial: null, pendingResolve: null },
+  P2: { type: PLAYER_TYPES.CPU_RANDOM, serial: null, pendingResolve: null },
 }
 
 let boards = { P1: null, P2: null } // navi normalizzate per giocatore

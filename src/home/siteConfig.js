@@ -1,6 +1,2 @@
-// Versione ESM dei flag del sito, usata dalla home React.
-// Tieni allineato con src/config.js (usato dalle pagine di gioco classiche).
-export const SITE_CONFIG = {
-  allowEmulator: false,
-  hiddenGames: ['pong', 'tron', 'racetrack', 'chess'],
-}
+// config.js viene caricato prima della home, come nelle pagine di gioco.
+export const SITE_CONFIG = globalThis.SITE_CONFIG

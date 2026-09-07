@@ -70,9 +70,9 @@
   margin: 0.15rem 0;
 }
 
-.type-fuoco { background: rgba(255, 107, 80, 0.2); color: #ff8a70; }
-.type-acqua { background: rgba(94, 177, 255, 0.2); color: #7cc0ff; }
-.type-erba { background: rgba(120, 220, 120, 0.2); color: #8ce68c; }
+.type-fuoco { background: rgba(255, 107, 80, 0.2); color: #ffaf9d; }
+.type-acqua { background: rgba(94, 177, 255, 0.2); color: #9ccfff; }
+.type-erba { background: rgba(120, 220, 120, 0.2); color: #a1e6a1; }
 .type-elettro { background: rgba(255, 220, 80, 0.2); color: #ffe066; }
 .type-normale { background: rgba(200, 200, 210, 0.18); color: #c8c8d2; }
 

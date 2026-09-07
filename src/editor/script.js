@@ -42,6 +42,28 @@ const cardsAvailable = document.getElementById('cards-available')
 const cardsDeck = document.getElementById('cards-deck')
 const testFrame = document.getElementById('test-frame')
 
+function readDraft(kind, gameId) {
+  try {
+    return JSON.parse(localStorage.getItem(`serial-gaming:lab:${gameId}:${kind}`))
+  } catch { return null }
+}
+
+function saveDraft(kind, gameId, value) {
+  const status = document.getElementById('save-status')
+  try {
+    localStorage.setItem(`serial-gaming:lab:${gameId}:${kind}`, JSON.stringify(value))
+    status.textContent = 'Salvato in questo browser'
+  } catch {
+    status.textContent = 'Salvataggio non disponibile: copia il codice prima di uscire.'
+  }
+}
+
+const requestedGame = new URLSearchParams(location.search).get('game')
+if (Object.hasOwn(LAB_GAMES, requestedGame) && !SITE_CONFIG.hiddenGames.includes(requestedGame)) {
+  gameSelect.value = requestedGame
+  templateSelect.value = requestedGame
+}
+
 // ── Gioco corrente (per i livelli Blocchi e Carte) ───────────
 let currentGameId = gameSelect.value
 
@@ -59,7 +81,10 @@ function showLevel() {
   const level = currentLevel()
   for (const name of LEVELS) {
     document.getElementById(`level-${name}`).hidden = name !== level
-    document.querySelector(`nav a[data-level="${name}"]`).classList.toggle('active', name === level)
+    const link = document.querySelector(`nav a[data-level="${name}"]`)
+    link.classList.toggle('active', name === level)
+    if (name === level) link.setAttribute('aria-current', 'page')
+    else link.removeAttribute('aria-current')
   }
   gameToolbar.hidden = level === 'python'
   if (workspace) Blockly.svgResize(workspace)
@@ -74,7 +99,8 @@ let blocklyReady = false
 const savedWorkspaces = {} // gameId -> XML testo
 
 function initBlockly() {
-  if (typeof Blockly === 'undefined') {
+  if (typeof Blockly === 'undefined' || !Blockly.Blocks.controls_if ||
+      !(globalThis.python?.pythonGenerator || Blockly.Python)) {
     document.getElementById('blockly-div').textContent =
       'Impossibile caricare Blockly: serve una connessione a internet. I livelli Python e Carte funzionano comunque.'
     return
@@ -95,14 +121,14 @@ function injectWorkspace() {
   if (workspace) {
     workspace.dispose()
   }
-  const darkTheme = Blockly.Theme.defineTheme(`serialgaming-dark-${currentGameId}`, {
+  const theme = Blockly.Theme.defineTheme(`serialgaming-${currentGameId}`, {
     base: Blockly.Themes.Zelos || Blockly.Themes.Classic,
     componentStyles: {
-      workspaceBackgroundColour: '#171a23',
-      toolboxBackgroundColour: '#1c2030',
-      toolboxForegroundColour: '#e8eaf2',
-      flyoutBackgroundColour: '#12141c',
-      flyoutForegroundColour: '#e8eaf2',
+      workspaceBackgroundColour: '#171d29',
+      toolboxBackgroundColour: '#202a38',
+      toolboxForegroundColour: '#e5edf5',
+      flyoutBackgroundColour: '#202a38',
+      flyoutForegroundColour: '#e5edf5',
       flyoutOpacity: 0.97,
       scrollbarColour: '#3a4157',
       insertionMarkerColour: '#4fd1c5',
@@ -110,19 +136,26 @@ function injectWorkspace() {
       markerColour: '#4fd1c5',
       cursorColour: '#4fd1c5',
     },
-    fontStyle: { size: 12 },
+    fontStyle: { size: 14 },
   })
   workspace = Blockly.inject('blockly-div', {
     toolbox: labGame().toolbox,
     renderer: 'zelos',
-    theme: darkTheme,
-    zoom: { controls: true, startScale: 0.9 },
-    grid: { spacing: 24, length: 2, colour: '#2c3245', snap: false },
+    theme,
+    zoom: { controls: true, startScale: 1 },
+    grid: { spacing: 24, length: 2, colour: '#344358', snap: false },
     trashcan: true,
   })
   const textToDom = (Blockly.utils.xml && Blockly.utils.xml.textToDom) || Blockly.Xml.textToDom
-  const xml = savedWorkspaces[currentGameId] || labGame().starterXml
-  Blockly.Xml.domToWorkspace(textToDom(xml), workspace)
+  const stored = readDraft('blocks', currentGameId)
+  const xml = savedWorkspaces[currentGameId] || (typeof stored === 'string' ? stored : labGame().starterXml)
+  try {
+    Blockly.Xml.domToWorkspace(textToDom(xml), workspace)
+  } catch {
+    workspace.clear()
+    Blockly.Xml.domToWorkspace(textToDom(labGame().starterXml), workspace)
+    log('I blocchi salvati non si aprono: ripartiamo dal modello iniziale.')
+  }
   workspace.addChangeListener(refreshGenerated)
   refreshGenerated()
 }
@@ -134,32 +167,47 @@ function blocksCode() {
 
 function refreshGenerated() {
   const code = blocksCode()
-  if (code) generatedEl.textContent = code
+  if (code) {
+    generatedEl.textContent = code
+    generatedEl.dispatchEvent(new Event('codechange'))
+    saveDraft('blocks', currentGameId, workspaceXml())
+  }
 }
 
 // ── Cambio di gioco ──────────────────────────────────────────
 gameSelect.addEventListener('change', () => {
   if (workspace) savedWorkspaces[currentGameId] = workspaceXml()
   currentGameId = gameSelect.value
+  const url = new URL(location.href)
+  url.searchParams.set('game', currentGameId)
+  history.replaceState(null, '', url)
   injectWorkspace()
   renderCards()
 })
 
 // ── Livello Python ───────────────────────────────────────────
-codeArea.value = BOT_TEMPLATES.tictactoe
+function restorePython() {
+  const draft = readDraft('python', templateSelect.value)
+  codeArea.value = typeof draft === 'string' ? draft : BOT_TEMPLATES[templateSelect.value]
+  codeArea.dispatchEvent(new Event('codechange'))
+}
+restorePython()
+codeArea.addEventListener('input', () => saveDraft('python', templateSelect.value, codeArea.value))
+generatedCarte.addEventListener('input', () => saveDraft('cards-code', currentGameId, generatedCarte.value))
 
 templateSelect.addEventListener('change', () => {
-  codeArea.value = BOT_TEMPLATES[templateSelect.value]
+  restorePython()
 })
 
 // Tab nelle textarea di codice inserisce 4 spazi invece di cambiare campo
 function enableTabIndent(textarea) {
   textarea.addEventListener('keydown', (event) => {
-    if (event.key !== 'Tab') return
+    if (event.key !== 'Tab' || event.shiftKey) return
     event.preventDefault()
     const { selectionStart, selectionEnd, value } = textarea
     textarea.value = value.slice(0, selectionStart) + '    ' + value.slice(selectionEnd)
     textarea.selectionStart = textarea.selectionEnd = selectionStart + 4
+    textarea.dispatchEvent(new Event('input'))
   })
 }
 enableTabIndent(codeArea)
@@ -169,7 +217,12 @@ enableTabIndent(generatedCarte)
 const decks = {} // gameId -> array di chiavi carta
 
 function currentDeck() {
-  if (!decks[currentGameId]) decks[currentGameId] = [...labGame().starterDeck]
+  if (!decks[currentGameId]) {
+    const draft = readDraft('deck', currentGameId)
+    decks[currentGameId] = Array.isArray(draft)
+      ? [...new Set(draft.filter(key => Object.hasOwn(labGame().cards, key)))]
+      : [...labGame().starterDeck]
+  }
   return decks[currentGameId]
 }
 
@@ -199,7 +252,7 @@ function highlightDeckCard(rule) {
   item.classList.add('fired')
 }
 
-function renderCards() {
+function renderCards(resetCode = false) {
   const cards = labGame().cards
   const deck = currentDeck()
 
@@ -211,7 +264,8 @@ function renderCards() {
     button.innerHTML = `<strong>${card.label}</strong><span>${card.hint}</span>`
     button.addEventListener('click', () => {
       deck.push(key)
-      renderCards()
+      renderCards(true)
+      cardsDeck.lastElementChild?.querySelector('button:not(:disabled)')?.focus()
     })
     cardsAvailable.appendChild(button)
   }
@@ -226,17 +280,22 @@ function renderCards() {
     item.innerHTML = `<strong>${cards[key].label}</strong><span>${cards[key].hint}</span>`
     const controls = document.createElement('div')
     controls.className = 'card-controls'
-    for (const [symbol, action, enabled] of [
-      ['▲', () => { [deck[index - 1], deck[index]] = [deck[index], deck[index - 1]] }, index > 0],
-      ['▼', () => { [deck[index + 1], deck[index]] = [deck[index], deck[index + 1]] }, index < deck.length - 1],
-      ['✕', () => { deck.splice(index, 1) }, true],
+    for (const [symbol, label, action, enabled, nextIndex] of [
+      ['▲', 'Sposta su', () => { [deck[index - 1], deck[index]] = [deck[index], deck[index - 1]] }, index > 0, index - 1],
+      ['▼', 'Sposta giù', () => { [deck[index + 1], deck[index]] = [deck[index], deck[index + 1]] }, index < deck.length - 1, index + 1],
+      ['✕', 'Rimuovi', () => { deck.splice(index, 1) }, true, index],
     ]) {
       const button = document.createElement('button')
       button.textContent = symbol
+      button.setAttribute('aria-label', `${label}: ${cards[key].label}`)
+      button.title = label
       button.disabled = !enabled
       button.addEventListener('click', () => {
         action()
-        renderCards()
+        renderCards(true)
+        const next = cardsDeck.children[Math.min(nextIndex, deck.length - 1)]
+        const focusTarget = next?.querySelector('button:not(:disabled)') || cardsAvailable.querySelector('button')
+        focusTarget?.focus()
       })
       controls.appendChild(button)
     }
@@ -247,9 +306,14 @@ function renderCards() {
     cardsDeck.innerHTML = '<p class="cards-empty">Mazzo vuoto: il bot giocherà sempre a caso. Aggiungi qualche carta!</p>'
   }
 
-  // riscrive il codice a partire dalle carte (le modifiche manuali vengono perse:
-  // è il comportamento voluto — le carte sono la fonte finché non le tocchi più)
-  generatedCarte.value = cardsCode()
+  // Solo cambiare il mazzo rigenera il codice; riaprire un gioco conserva le modifiche manuali.
+  const draft = readDraft('cards-code', currentGameId)
+  generatedCarte.value = !resetCode && typeof draft === 'string' ? draft : cardsCode()
+  generatedCarte.dispatchEvent(new Event('codechange'))
+  if (resetCode) {
+    saveDraft('deck', currentGameId, deck)
+    saveDraft('cards-code', currentGameId, generatedCarte.value)
+  }
 }
 
 // ── Da carte a blocchi ───────────────────────────────────────
@@ -349,6 +413,7 @@ tryButton.addEventListener('click', async () => {
     })
     await emu.start()
   } catch (error) {
+    emu?.disconnect()
     log(`Il bot non parte: ${error.message}`)
     testing = false
     tryButton.disabled = false
@@ -357,10 +422,12 @@ tryButton.addEventListener('click', async () => {
 
   testFrame.innerHTML = ''
   const iframe = document.createElement('iframe')
+  iframe.title = 'Partita di prova del tuo bot'
   iframe.src = GAME_PATH[testGameId]
   iframe.addEventListener('load', () => {
     const target = iframe.contentWindow
     if (typeof target.startExternalMatch !== 'function') {
+      emu.disconnect()
       log('La pagina del gioco non è pilotabile.')
       testing = false
       tryButton.disabled = false
@@ -371,11 +438,11 @@ tryButton.addEventListener('click', async () => {
     // mazzo e la si annota nel log (l'avversario CPU non manda regole)
     target.__onBotRule = (id, rule) => {
       log(`🃏 ${rule}`)
-      highlightDeckCard(rule)
+      if (currentGameId === gameId) highlightDeckCard(rule)
     }
     target.startExternalMatch([emu, TEST_CPU[testGameId]], winnerSlot => {
       if (winnerSlot === 'P1') log('🎉 Il tuo bot ha VINTO!')
-      else if (winnerSlot === 'P2') log('La CPU ha vinto: si può fare di meglio!')
+      else if (winnerSlot === 'P2') log('Questa volta ha vinto il computer. Quale carta potresti cambiare?')
       else log('Pareggio.')
       emu.disconnect()
       testing = false
@@ -402,7 +469,8 @@ function updateSerialControls() {
   const connected = pico.isConnected
   connStatus.textContent = connected ? 'connesso' : 'non connesso'
   connStatus.classList.toggle('connected', connected)
-  connectButton.disabled = connected || busy
+  connectButton.disabled = connected || busy || !('serial' in navigator)
+  document.getElementById('serial-help').hidden = 'serial' in navigator
   uploadButton.disabled = !connected || busy
 }
 

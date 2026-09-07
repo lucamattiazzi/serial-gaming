@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sfida a distanza — Serial Gaming</title>
+  <link rel="stylesheet" href="../style.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="remote-page">
+  <header class="topbar"><a class="brand" href="../">Serial Gaming</a><nav><a href="../editor/">Laboratorio</a><a href="../torneo/">Due Pico sullo stesso PC</a></nav></header>
+  <main>
+    <span class="remote-eyebrow">DUE COMPUTER. DUE PICO. UNA SFIDA.</span>
+    <h1>Il tuo bot, contro il suo.<br><span>Anche a distanza.</span></h1>
+    <p class="intro">Prima sfida online: <strong>Tris</strong>. Caricate ciascuno il vostro bot su un RP2040 dal <a href="../editor/?game=tictactoe#python">Laboratorio</a>, poi collegate la scheda al vostro computer.</p>
+    <div class="remote-setup">
+      <section class="remote-card">
+        <h2>1. Collega il tuo Pico</h2>
+        <p>Usa Chrome o Edge su computer. Il codice continua a girare sulla tua scheda.</p>
+        <button id="connect-pico" class="btn connect">Connetti RP2040</button>
+        <p id="pico-status" role="status">Nessuna scheda connessa.</p>
+        <button id="disconnect-pico" class="btn small" disabled>Scollega</button>
+      </section>
+      <section class="remote-card" id="room-setup">
+        <h2>2. Incontratevi in una stanza</h2>
+        <button id="create-room" class="btn primary" disabled>Crea una stanza</button>
+        <p>Oppure inserisci il codice del tuo avversario:</p>
+        <form id="join-form"><label for="room-code">Codice stanza</label><div class="join-row"><input id="room-code" name="code" maxlength="10" minlength="10" pattern="[a-fA-F0-9]{10}" autocomplete="off" spellcheck="false" placeholder="A1B2C3D4E5" required><button id="join-room" class="btn" disabled>Entra</button></div></form>
+      </section>
+      <section class="remote-card" id="room-panel" hidden>
+        <h2>La vostra stanza</h2>
+        <p>Passa questo codice all’altro partecipante:</p>
+        <output id="share-code"></output>
+        <p id="room-status" role="status"></p>
+        <button id="start-match" class="btn primary" disabled>Inizia la sfida</button>
+        <button id="leave-room" class="btn">Esci dalla stanza</button>
+      </section>
+    </div>
+    <p id="connection-status" role="status">Collegamento al server…</p>
+    <p id="remote-error" role="alert" hidden></p>
+    <section id="match-panel" hidden aria-label="Partita a distanza">
+      <p id="match-status" role="status"></p>
+      <div id="remote-board" role="group" aria-label="Tabellone del Tris"></div>
+      <p id="turn-time"></p>
+    </section>
+    <p class="remote-note">L’arbitro sul server controlla le mosse. Ogni turno ha 5 secondi, rete inclusa. Le stanze durano 30 minuti e si chiudono se un partecipante esce. Per gli altri giochi potete usare due Pico sullo stesso computer.</p>
+  </main>
+  <script src="../picoserial.js"></script>
+  <script type="module" src="script.js"></script>
+</body>
+</html>

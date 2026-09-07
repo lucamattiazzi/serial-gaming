@@ -78,7 +78,7 @@ const seriesScore = document.getElementById('series-score')
 // ── Stato di gioco ───────────────────────────────────────────
 const players = {
   X: { type: PLAYER_TYPES.HUMAN, serial: null, pendingResolve: null },
-  O: { type: PLAYER_TYPES.PICO, serial: null, pendingResolve: null },
+  O: { type: PLAYER_TYPES.CPU_RANDOM, serial: null, pendingResolve: null },
 }
 
 const board = Array(COLS * ROWS).fill('')

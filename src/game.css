@@ -290,3 +290,14 @@ header h1:hover .game-icon {
     box-shadow: none;
   }
 }
+
+.game-intro { text-align: center; color: var(--text-dim); max-width: 540px; margin: 0 0 24px; }
+.lab-next { display: inline-block; margin: 12px 0; padding: 12px 18px; border: 1px solid var(--border); border-radius: 10px; }
+.external-match .game-intro, .external-match .lab-next { display: none; }
+.player-card { min-width: 0; }
+.player-card select { width: 100%; }
+#timer-text { color: var(--text); mix-blend-mode: normal; }
+@media (max-width: 560px) {
+  .game-page header { grid-template-columns: 1fr auto; gap: 12px; }
+  .game-page header h1 { grid-column: 1 / -1; grid-row: 2; }
+}

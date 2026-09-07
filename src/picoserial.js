@@ -127,12 +127,13 @@ class PicoSerial {
   async readFromPort() {
     try {
       let buffer = ''
+      const decoder = new TextDecoder()
 
       while (this.isConnected && this.reader) {
         const { value, done } = await this.reader.read()
         if (done) break
 
-        const text = new TextDecoder().decode(value)
+        const text = decoder.decode(value, { stream: true })
         buffer += text
         this._feedRaw(text)
 
@@ -149,10 +150,8 @@ class PicoSerial {
       }
     } catch (error) {
       this.logMessage(`errore di lettura: ${error.message}`, 'error')
-      if (this.isConnected) {
-        this.isConnected = false
-        this.disconnectHandler()
-      }
+    } finally {
+      if (this.isConnected) await this.disconnect()
     }
   }
 

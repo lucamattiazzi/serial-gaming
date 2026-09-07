@@ -42,7 +42,7 @@ const timerText = document.getElementById('timer-text')
 // B = Nero (muove sempre per primo, come da regole), W = Bianco
 const players = {
   B: { type: PLAYER_TYPES.HUMAN, serial: null, pendingResolve: null },
-  W: { type: PLAYER_TYPES.PICO, serial: null, pendingResolve: null },
+  W: { type: PLAYER_TYPES.CPU_RANDOM, serial: null, pendingResolve: null },
 }
 
 const board = Array(SIZE * SIZE).fill('')

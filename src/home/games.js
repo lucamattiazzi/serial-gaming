@@ -1,14 +1,14 @@
-// Metadati dei giochi per la griglia della home.
+// Difficoltà riferita alla costruzione di una prima strategia con le carte.
 export const GAMES = [
-  { id: 'tictactoe', icon: '#', title: 'Tris', blurb: 'Il classico. Perfetto per iniziare a scrivere il tuo primo bot.', href: 'tictactoe/', cta: 'Gioca' },
-  { id: 'forza4', icon: '◎', title: 'Forza 4', blurb: 'Gravità e quattro in fila: qui il minimax si guadagna la pagnotta.', href: 'forza4/', cta: 'Gioca' },
-  { id: 'morra', icon: '✊', title: 'Morra cinese', blurb: '20 round simultanei: vince chi legge i pattern dell\'avversario.', href: 'morra/', cta: 'Gioca' },
-  { id: 'pong', icon: '▐ ●', title: 'Pong', blurb: 'Tempo reale: 10 stati al secondo, riflessi e previsione dei rimbalzi.', href: 'pong/', cta: 'Gioca' },
-  { id: 'tron', icon: '⌐¬', title: 'Tron', blurb: 'Scie luminose e territorio: l\'ultimo vivo vince.', href: 'tron/', cta: 'Gioca' },
-  { id: 'navale', icon: '⚓', title: 'Battaglia navale', blurb: 'Informazione nascosta: piazzamento, caccia e mappe di probabilità.', href: 'navale/', cta: 'Gioca' },
-  { id: 'racetrack', icon: '🏁', title: 'Racetrack', blurb: 'Corsa vettoriale: accelera, pianifica la frenata, non uscire di pista.', href: 'racetrack/', cta: 'Gioca' },
-  { id: 'arena', icon: '🦊', title: 'Arena dei Mostri', blurb: 'Draft, tipi in ciclo e cambi al momento giusto: sei l\'allenatore.', href: 'arena/', cta: 'Gioca' },
-  { id: 'othello', icon: '◐', title: 'Othello', blurb: 'Regole in due minuti, strategia profonda: gli angoli valgono oro.', href: 'othello/', cta: 'Gioca' },
-  { id: 'chess', icon: '♞', title: 'Scacchi', blurb: 'Il tuo bot reggerà una partita intera su un RP2040?', href: 'chess/', cta: 'Gioca' },
-  { id: 'torneo', icon: '🏆', title: 'Torneo', blurb: '3 giochi a sorte, vince chi ne prende 2. Il giudizio universale dei bot.', href: 'torneo/', cta: 'Sfida' },
+  { id: 'tictactoe', icon: '× ○', doodle: '#', title: 'Tris', level: 'inizio', blurb: 'Tre simboli in fila e una domanda: quale sarà la prossima mossa?', href: 'tictactoe/' },
+  { id: 'morra', icon: '✊ ✌', doodle: '↻', title: 'Sasso, carta, forbici', level: 'inizio', blurb: 'Scegli la tua mossa e prova a indovinare quella dell’avversario.', href: 'morra/' },
+  { id: 'forza4', icon: '● ●', doodle: '●', title: 'Forza 4', level: 'inizio', blurb: 'Fai cadere i gettoni. Collega quattro colori. Pensa una mossa avanti!', href: 'forza4/' },
+  { id: 'navale', icon: '⚓', doodle: '≈', title: 'Battaglia navale', level: 'sfida', blurb: 'Esplora la griglia e cerca le navi nascoste: ogni colpo è un indizio.', href: 'navale/' },
+  { id: 'arena', icon: '🦊', doodle: 'ϟ', title: 'Arena dei mostri', level: 'sfida', blurb: 'Forma la tua squadra e scopri quando attaccare o cambiare mostro.', href: 'arena/' },
+  { id: 'othello', icon: '◐', doodle: '○', title: 'Othello', level: 'sfida', blurb: 'Gira le pedine e conquista gli angoli. A volte, meno è meglio!', href: 'othello/' },
+  { id: 'pong', icon: '▐ ●', title: 'Pong', level: 'sfida', blurb: 'Segui la palla e prevedi il prossimo rimbalzo.', href: 'pong/' },
+  { id: 'tron', icon: '⌐¬', title: 'Tron', level: 'sfida', blurb: 'Trova una strada libera tra le scie luminose.', href: 'tron/' },
+  { id: 'racetrack', icon: '🏁', title: 'Racetrack', level: 'sfida', blurb: 'Accelera, frena e trova la traiettoria giusta.', href: 'racetrack/' },
+  { id: 'chess', icon: '♞', title: 'Scacchi', level: 'sfida', blurb: 'Insegna al tuo bot a pensare una mossa avanti.', href: 'chess/' },
+  { id: 'torneo', icon: '🏆', title: 'Torneo', level: 'sfida', blurb: 'Tre giochi per mettere alla prova i vostri bot.', href: 'torneo/' },
 ]

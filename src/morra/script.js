@@ -60,7 +60,7 @@ const historyStrip = document.getElementById('history-strip')
 // ── Stato di gioco ───────────────────────────────────────────
 const players = {
   P1: { type: PLAYER_TYPES.HUMAN, serial: null, pendingResolve: null, humanResolve: null },
-  P2: { type: PLAYER_TYPES.PICO, serial: null, pendingResolve: null, humanResolve: null },
+  P2: { type: PLAYER_TYPES.CPU_RANDOM, serial: null, pendingResolve: null, humanResolve: null },
 }
 
 let gameActive = false

@@ -1,46 +1,37 @@
-# Migrazione a npm + Vite + React
+# Architettura del sito
 
-Il sito nasce come pagine statiche vanilla (HTML/CSS/JS) servite in locale con
-`python3 -m http.server`. Questa è la prima tappa della migrazione a una
-toolchain **npm + Vite + React** che produce un sito **interamente statico**
-(cartella `dist/`) senza alcun Python.
+Il sito usa Vite e React per la home; i giochi e il Laboratorio conservano
+HTML, CSS e JavaScript classico. I motori di gioco non sono stati riscritti.
 
-## Stato attuale (tappa 1)
+- `src/index.html` — home React; `src/app.html` resta un alias compatibile.
+- `src/home/` — componenti, catalogo e stile della home.
+- `src/config.js` — unica configurazione per home, giochi e laboratorio.
+  `src/home/siteConfig.js` espone la stessa configurazione a React.
+- `src/editor/` — carte, blocchi Blockly, editor Python CodeMirror, prove e upload USB.
+- `src/<gioco>/` — pagina, motore e documentazione di ciascun gioco.
+- `src/remote/` — stanze online del Tris, ogni partecipante con il proprio Pico.
+- `server/index.js` — server HTTP/WebSocket e arbitro del Tris, stanze in memoria.
+- `src/lezioni/` — guida docente, con una prima attività breve per la quinta primaria.
+- `examples/` — bot MicroPython di esempio; non fanno parte della build.
+- `tests/classroom.spec.js` — verifiche browser mirate al percorso didattico.
 
-Aggiunto in modo **non distruttivo**: il sito vanilla continua a funzionare
-come prima. In parallelo c'è il progetto Vite, e **tutto il sorgente vive in
-`src/`** (che è anche la `root` di Vite):
+## Build e distribuzione
 
-- `package.json`, `vite.config.js` — toolchain e build multi-pagina.
-- `src/` — tutto il sito: pagine di gioco (`src/<gioco>/`), Laboratorio
-  (`src/editor/`), file condivisi (`src/picoserial.js`, `src/style.css`, …),
-  home vanilla (`src/index.html`) e home React (`src/app.html` + `src/home/`),
-  che rispetta i flag di `src/home/siteConfig.js`.
-- `examples/` — i bot MicroPython di esempio (non fanno parte del sito).
-- Le **pagine di gioco restano quelle esistenti** (motori già collaudati:
-  canvas, WebSerial, Pyodide, Blockly). Vite le impacchetta come entry statiche
-  senza riscriverle.
+`npm run build` produce il frontend statico in `dist/`. `npm start` lo serve
+e aggiunge il server WebSocket per le sfide a distanza. La home sorgente richiede
+Vite: non può più essere servita direttamente con `python -m http.server`
+all'interno di `src/`. Dopo la build, `dist/` si può servire con qualunque
+server statico.
 
-`vite build` genera `dist/` con le due home, tutte le pagine di gioco e le
-relative pagine di documentazione. Senza toolchain il sito si serve ancora
-statico: `python3 -m http.server` **da dentro `src/`**.
+Il plugin `copyClassicAssets` copia gli script classici nei percorsi relativi
+usati dalle pagine. Gli avvisi di Vite sugli script senza `type="module"`
+sono previsti: questi script condividono variabili globali e non devono essere
+convertiti in moduli aggiungendo soltanto l'attributo HTML.
 
-## Comandi (richiede Node ≥ 18)
+Vite è aggiornato alla serie 6.4 per correggere le vulnerabilità rilevate
+nella serie 5 mantenendo la compatibilità con il plugin React esistente.
+Il lockfile del progetto rimane `package-lock.json`; non sono mantenuti due
+lockfile concorrenti.
 
-```bash
-npm install
-npm run dev      # server di sviluppo (sostituisce python -m http.server)
-npm run build    # sito statico in dist/
-npm run preview  # anteprima della build
-```
-
-## Prossime tappe
-
-1. Sostituire `src/index.html` (home vanilla) con `src/app.html` (home React),
-   oppure rinominare `app.html` → `index.html` una volta verificata la build.
-2. Unificare la configurazione: far leggere a `src/config.js` (pagine classiche)
-   e a `src/home/siteConfig.js` (React) un'unica fonte, oppure convertire le
-   pagine di gioco perché importino il modulo ESM.
-3. Portare i giochi in React uno alla volta (a scelta): estrarre il motore puro
-   di ogni gioco (già isolato e testato con gli harness JXA) e avvolgerlo in un
-   componente React che gestisce solo la UI. I test di logica restano validi.
+Blockly è fissato alla versione 13.2.1 sul CDN. Blockly e Pyodide richiedono
+internet: la build non è un pacchetto completamente offline.

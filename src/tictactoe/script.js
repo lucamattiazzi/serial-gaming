@@ -1,6 +1,5 @@
 // ── Configurazione ───────────────────────────────────────────
 const MOVE_TIME_LIMIT_MS = 1000 // tempo massimo per mossa di un RP2040, pena sconfitta
-const HUMAN_TIME_LIMIT_MS = 10000 // tempo massimo per mossa di un umano
 const CPU_MOVE_DELAY_MS = 400   // pausa estetica prima della mossa della CPU
 const SERIES_GAMES = 5          // partite della sfida tra due RP2040
 const SERIES_TARGET = 3         // vittorie che chiudono la sfida in anticipo
@@ -40,7 +39,7 @@ const timerText = document.getElementById('timer-text')
 // ── Stato di gioco ───────────────────────────────────────────
 const players = {
   X: { type: PLAYER_TYPES.HUMAN, serial: null, pendingResolve: null },
-  O: { type: PLAYER_TYPES.PICO, serial: null, pendingResolve: null },
+  O: { type: PLAYER_TYPES.CPU_RANDOM, serial: null, pendingResolve: null },
 }
 
 const board = Array(9).fill('')
@@ -50,7 +49,6 @@ let currentSymbol = 'X'
 let lastMoveIndex = null
 let waitingHuman = false
 let timerInterval = null
-let humanTimeout = null
 let series = null // { score: {X, O}, game: n } durante una sfida al meglio di 5
 const cells = []
 
@@ -176,7 +174,9 @@ function buildBoard() {
   gameBoard.innerHTML = ''
   cells.length = 0
   for (let i = 0; i < 9; i++) {
-    const cell = document.createElement('div')
+    const cell = document.createElement('button')
+    cell.type = 'button'
+    cell.setAttribute('aria-label', `Riga ${Math.floor(i / 3) + 1}, colonna ${i % 3 + 1}: libera`)
     cell.classList.add('cell')
     cell.dataset.index = i
     cell.addEventListener('click', () => handleCellClick(i))
@@ -188,6 +188,7 @@ function buildBoard() {
 function renderCell(index, animate = false) {
   const cell = cells[index]
   cell.textContent = board[index]
+  cell.setAttribute('aria-label', `Riga ${Math.floor(index / 3) + 1}, colonna ${index % 3 + 1}: ${board[index] || 'libera'}`)
   cell.classList.remove('mark-x', 'mark-o', 'pop', 'win')
   if (board[index] === 'X') cell.classList.add('mark-x')
   if (board[index] === 'O') cell.classList.add('mark-o')
@@ -223,7 +224,6 @@ function startGame(startSymbol) {
   waitingHuman = false
   gameActive = true
   gamePlayed = true
-  clearHumanTimer()
   announceMatch()
   for (let i = 0; i < 9; i++) renderCell(i)
   gameBoard.classList.remove('idle')
@@ -240,7 +240,7 @@ async function nextTurn() {
   if (player.type === PLAYER_TYPES.HUMAN) {
     waitingHuman = true
     setStatus(`Tocca a te, ${currentSymbol}: scegli una casella.`)
-    startHumanTimer()
+    stopTimerDisplay()
     return
   }
 
@@ -307,7 +307,6 @@ function requestPicoMove(player) {
 function handleCellClick(index) {
   if (!gameActive || !waitingHuman || board[index] !== '') return
   waitingHuman = false
-  clearHumanTimer()
   stopTimerDisplay()
   applyMove(index)
 }
@@ -336,7 +335,6 @@ function declareLoss(loserSymbol, reason) {
 function endGame(result, reasonMessage = null) {
   gameActive = false
   waitingHuman = false
-  clearHumanTimer()
   stopTimerDisplay()
   gameBoard.classList.remove('human-turn')
   highlightTurn(null)
@@ -439,22 +437,6 @@ function startTimerDisplay(limitMs = MOVE_TIME_LIMIT_MS) {
     timerText.textContent = `${(remaining / 1000).toFixed(1)}s`
     timerEl.classList.toggle('low', remaining < limitMs * 0.3)
   }, 100)
-}
-
-// Anche gli umani hanno un tempo massimo: timer a video e sconfitta a
-// tavolino se scade. I bot restano su MOVE_TIME_LIMIT_MS.
-function startHumanTimer() {
-  startTimerDisplay(HUMAN_TIME_LIMIT_MS)
-  humanTimeout = setTimeout(() => {
-    if (!gameActive || !waitingHuman) return
-    waitingHuman = false
-    declareLoss(currentSymbol, 'tempo scaduto')
-  }, HUMAN_TIME_LIMIT_MS)
-}
-
-function clearHumanTimer() {
-  clearTimeout(humanTimeout)
-  humanTimeout = null
 }
 
 function stopTimerDisplay() {
