@@ -1,3 +1,6 @@
+import { BrowserBot } from './browser-bot.js'
+import '../editor/code-editor.js'
+
 const el = id => document.getElementById(id)
 const pico = new PicoSerial('Il tuo bot')
 pico.verbose = false
@@ -9,6 +12,45 @@ let requestId = null
 let connecting = false
 let deadline = null
 let ready = { X: false, O: false }
+const browserBot = new BrowserBot(message => {
+  el('browser-status').textContent = message
+  // In partita un errore Python lascia all'arbitro il verdetto per timeout.
+  if (!running) publishReady()
+  else updateControls()
+}, (id, reply) => {
+  if (usesBrowser() && id === requestId && reply && Object.hasOwn(reply, 'move')) {
+    send({ type: 'move', requestId: id, move: reply.move })
+    requestId = null
+  }
+})
+const draftKey = 'serial-gaming:remote:tictactoe:python'
+function readDraft(key) {
+  try { return localStorage.getItem(key) } catch { return null }
+}
+function setCode(code) {
+  el('browser-code').value = code
+  el('browser-code').dispatchEvent(new Event('codechange'))
+}
+setCode(readDraft(draftKey) || readDraft('serial-gaming:lab:tictactoe:python') || `# Il mio primo bot: scegli la prima casella libera.
+def rispondi(stato):
+    caselle = stato.get("board")
+    if caselle:
+        for posizione in range(9):
+            if caselle[posizione] == "":
+                return {"move": posizione}
+`)
+el('browser-code').addEventListener('input', () => {
+  try { localStorage.setItem(draftKey, el('browser-code').value) } catch { /* La sfida funziona anche senza storage. */ }
+})
+for (const [button, key] of [['load-python', 'python'], ['load-cards', 'cards-code']]) {
+  el(button).addEventListener('click', () => {
+    const code = readDraft(`serial-gaming:lab:tictactoe:${key}`)
+    if (!code) { error('Non trovo questo codice del Tris. Salvalo prima nel Laboratorio su questo browser.'); return }
+    error('')
+    setCode(code)
+  })
+}
+function usesBrowser() { return el('bot-engine').value === 'browser' }
 
 function error(message) {
   el('remote-error').textContent = message
@@ -17,11 +59,20 @@ function error(message) {
 function send(message) {
   if (socket?.readyState === WebSocket.OPEN) socket.send(JSON.stringify(message))
 }
-function isBotReady() {
+function isPicoReady() {
   return pico.isConnected && (!pico.identity || pico.identity.bots?.includes('tictactoe'))
 }
+function isBotReady() { return usesBrowser() ? browserBot.ready : isPicoReady() }
 function updateControls() {
   const online = socket?.readyState === WebSocket.OPEN
+  el('pico-panel').hidden = usesBrowser()
+  el('browser-panel').hidden = !usesBrowser()
+  el('bot-engine').disabled = running || connecting
+  el('start-browser').disabled = !!browserBot.worker || running
+  el('stop-browser').disabled = !browserBot.worker
+  el('browser-editor').inert = !!browserBot.worker
+  el('load-python').disabled = !!browserBot.worker
+  el('load-cards').disabled = !!browserBot.worker
   el('connect-pico').disabled = connecting || pico.isConnected || !('serial' in navigator)
   el('disconnect-pico').disabled = !pico.isConnected
   el('create-room').disabled = !online || !!room
@@ -34,17 +85,17 @@ function updateControls() {
 function publishReady() {
   if (room) send({ type: 'ready', ready: isBotReady() })
   el('pico-status').textContent = !pico.isConnected ? 'Nessuna scheda connessa.'
-    : isBotReady() ? `Pico connesso${pico.identity?.name ? `: ${pico.identity.name}` : ''}. Bot pronto.`
+    : isPicoReady() ? `Pico connesso${pico.identity?.name ? `: ${pico.identity.name}` : ''}. Bot pronto.`
     : 'Su questa scheda manca il bot del Tris. Caricalo dal Laboratorio.'
   updateControls()
 }
 pico.onidentity(publishReady)
 pico.ondisconnect(() => {
-  requestId = null
+  if (!usesBrowser()) requestId = null
   publishReady()
 })
 pico.onmessage(line => {
-  if (!requestId) return
+  if (usesBrowser() || !requestId) return
   let reply
   try { reply = JSON.parse(line) } catch { return }
   if (!reply || typeof reply !== 'object' || !Object.hasOwn(reply, 'move')) return
@@ -60,6 +111,22 @@ el('connect-pico').addEventListener('click', async () => {
   publishReady()
 })
 el('disconnect-pico').addEventListener('click', () => pico.disconnect())
+el('bot-engine').addEventListener('change', () => {
+  requestId = null
+  browserBot.stop()
+  if (usesBrowser()) pico.disconnect()
+  error('')
+  publishReady()
+})
+el('start-browser').addEventListener('click', () => {
+  error('')
+  browserBot.start(el('browser-code').value)
+})
+el('stop-browser').addEventListener('click', () => {
+  requestId = null
+  browserBot.stop()
+  publishReady()
+})
 el('create-room').addEventListener('click', () => { error(''); send({ type: 'create' }) })
 el('join-form').addEventListener('submit', event => {
   event.preventDefault()
@@ -92,6 +159,7 @@ function renderState(message) {
   if (!running) {
     requestId = null
     el('turn-time').textContent = message.reason || 'Partita conclusa. Potete sfidarvi di nuovo.'
+    if (usesBrowser() && !browserBot.ready) publishReady()
   }
   updateControls()
 }
@@ -115,12 +183,13 @@ socket.addEventListener('message', event => {
       ready = message.ready
       running = message.running
       el('room-status').textContent = `Tu sei ${role}. ${!message.present.O ? 'In attesa dell’avversario.'
-        : ready.X && ready.O ? 'Entrambi i bot sono pronti.' : 'Collegate entrambi i Pico.'}${role === 'O' ? ' Avvia la sfida chi ha creato la stanza.' : ''}`
+        : ready.X && ready.O ? 'Entrambi i bot sono pronti.' : 'Preparate entrambi i bot: Pico USB o Python nel browser.'}${role === 'O' ? ' Avvia la sfida chi ha creato la stanza.' : ''}`
       updateControls()
       break
     case 'bot-state':
       requestId = message.requestId
-      if (pico.isConnected) pico.sendMessage(JSON.stringify(message.state))
+      if (usesBrowser()) browserBot.sendState(message.state, message.requestId)
+      else if (pico.isConnected) pico.sendMessage(JSON.stringify(message.state))
       break
     case 'state': renderState(message); break
     case 'closed':
@@ -130,6 +199,7 @@ socket.addEventListener('message', event => {
       requestId = null
       deadline = null
       ready = { X: false, O: false }
+      browserBot.stop()
       el('match-panel').hidden = true
       error(message.message)
       updateControls()
@@ -142,6 +212,7 @@ socket.addEventListener('close', () => {
   running = false
   requestId = null
   deadline = null
+  browserBot.stop()
   el('match-panel').hidden = true
   el('connection-status').textContent = 'Server scollegato. Ricarica la pagina per riconnetterti.'
   updateControls()
@@ -150,6 +221,6 @@ socket.addEventListener('error', () => error('Non riesco a raggiungere il server
 setInterval(() => {
   if (running && deadline) el('turn-time').textContent = `Tempo rimasto: ${Math.max(0, (deadline - Date.now()) / 1000).toFixed(1)} s`
 }, 100)
-window.addEventListener('pagehide', () => { socket.close(); pico.disconnect() })
+window.addEventListener('pagehide', () => { socket.close(); pico.disconnect(); browserBot.stop() })
 if (!('serial' in navigator)) el('pico-status').textContent = 'Per collegare il Pico usa Chrome o Edge su computer, in HTTPS.'
 updateControls()

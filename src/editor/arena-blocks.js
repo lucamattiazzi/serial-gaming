@@ -58,6 +58,23 @@ def attacco_preciso():
     return ["attacca", 1]
 
 
+def attacco_jolly():
+    return ["attacca", 2]
+
+
+def posso_curare():
+    io = _mio()
+    return STATE["you"].get("healsLeft", 0) > 0 and 0 < io["hp"] < io["maxHp"]
+
+
+def vita_bassa():
+    return _mio()["hp"] <= _mio()["maxHp"] / 2
+
+
+def curati():
+    return ["cura"]
+
+
 def difenditi():
     return ["difendi"]
 
@@ -135,7 +152,9 @@ def _azione_valida(azione):
     if azione[0] == "difendi":
         return True
     if azione[0] == "attacca":
-        return len(azione) == 2 and azione[1] in (0, 1)
+        return len(azione) == 2 and azione[1] in range(len(_mio()["moves"]))
+    if azione[0] == "cura":
+        return len(azione) == 1 and posso_curare()
     if azione[0] == "cambia":
         return len(azione) == 2 and azione[1] in _panchina()
     return False
@@ -219,6 +238,10 @@ LAB_GAMES.arena = {
           { kind: 'block', type: 'arena_attacco_migliore' },
           { kind: 'block', type: 'arena_attacco_forte' },
           { kind: 'block', type: 'arena_attacco_preciso' },
+          { kind: 'block', type: 'arena_attacco_jolly' },
+          { kind: 'block', type: 'arena_cura' },
+          { kind: 'block', type: 'arena_posso_curare' },
+          { kind: 'block', type: 'arena_vita_bassa' },
           { kind: 'block', type: 'arena_difendi' },
           { kind: 'block', type: 'arena_cambio_migliore' },
           { kind: 'block', type: 'arena_svantaggiato' },
@@ -246,6 +269,10 @@ LAB_GAMES.arena = {
       { type: 'arena_attacco_migliore', message0: "l'attacco più efficace", output: 'Azione', colour: 20, tooltip: 'L\'attacco col miglior danno atteso (potenza × tipo × precisione).' },
       { type: 'arena_attacco_forte', message0: "l'attacco forte", output: 'Azione', colour: 20, tooltip: 'Tanta potenza, ma può mancare il bersaglio.' },
       { type: 'arena_attacco_preciso', message0: "l'attacco preciso", output: 'Azione', colour: 20, tooltip: 'Meno potenza, ma va sempre a segno.' },
+      { type: 'arena_attacco_jolly', message0: 'il colpo jolly', output: 'Azione', colour: 20, tooltip: '24 danni contro ogni tipo. La difesa può dimezzarli.' },
+      { type: 'arena_cura', message0: 'cura il mio mostro', output: 'Azione', colour: 120, tooltip: 'Recupera fino a 35 HP e consuma una delle due cure della squadra. Usa prima il controllo: posso curare?' },
+      { type: 'arena_posso_curare', message0: 'posso curare?', output: 'Boolean', colour: 120, tooltip: 'Hai una cura rimasta e il mostro in campo ha perso punti vita, ma non è KO.' },
+      { type: 'arena_vita_bassa', message0: 'ho metà vita o meno?', output: 'Boolean', colour: 120, tooltip: 'Il mostro in campo ha al massimo metà dei suoi punti vita.' },
       { type: 'arena_difendi', message0: 'difenditi', output: 'Azione', colour: 20, tooltip: 'Dimezzi il danno ricevuto e ne restituisci una parte.' },
       { type: 'arena_cambio_migliore', message0: 'il cambio migliore', output: 'Azione', colour: 20, tooltip: 'Manda in campo il mostro della panchina messo meglio contro quello avversario.' },
       { type: 'arena_svantaggiato', message0: 'sono svantaggiato di tipo?', output: 'Boolean', colour: 20, tooltip: 'Vero se il tipo avversario è superefficace sul tuo.' },
@@ -264,6 +291,10 @@ LAB_GAMES.arena = {
     define('arena_attacco_migliore', () => ['attacco_migliore()', Order.FUNCTION_CALL])
     define('arena_attacco_forte', () => ['attacco_forte()', Order.FUNCTION_CALL])
     define('arena_attacco_preciso', () => ['attacco_preciso()', Order.FUNCTION_CALL])
+    define('arena_attacco_jolly', () => ['attacco_jolly()', Order.FUNCTION_CALL])
+    define('arena_cura', () => ['curati()', Order.FUNCTION_CALL])
+    define('arena_posso_curare', () => ['posso_curare()', Order.FUNCTION_CALL])
+    define('arena_vita_bassa', () => ['vita_bassa()', Order.FUNCTION_CALL])
     define('arena_difendi', () => ['difenditi()', Order.FUNCTION_CALL])
     define('arena_cambio_migliore', () => ['cambio_migliore()', Order.FUNCTION_CALL])
     define('arena_svantaggiato', () => ['sono_svantaggiato()', Order.FUNCTION_CALL])
@@ -275,6 +306,18 @@ LAB_GAMES.arena = {
   },
 
   cards: {
+    cura: {
+      label: '💚 Cura se hai poca vita',
+      hint: 'Hai metà vita o meno e una cura rimasta? Recupera fino a 35 HP. Ne hai solo due per squadra.',
+      code: 'if vita_bassa() and posso_curare():\n  return curati()',
+      xml: '<block type="controls_if"><value name="IF0"><block type="logic_operation"><field name="OP">AND</field><value name="A"><block type="arena_vita_bassa"></block></value><value name="B"><block type="arena_posso_curare"></block></value></block></value><statement name="DO0"><block type="arena_fai"><value name="AZIONE"><block type="arena_cura"></block></value></block></statement></block>',
+    },
+    jolly: {
+      label: '🃏 Sempre il colpo jolly',
+      hint: '24 danni contro tutti i tipi: utile quando il nemico resiste ai tuoi attacchi. La difesa può dimezzarli.',
+      code: 'return attacco_jolly()',
+      xml: '<block type="arena_fai"><value name="AZIONE"><block type="arena_attacco_jolly"></block></value></block>',
+    },
     svantaggio: {
       label: '🔄 Cambia se sei svantaggiato',
       hint: 'Il suo tipo batte il tuo? Manda in campo il mostro messo meglio.',

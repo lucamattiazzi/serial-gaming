@@ -14,13 +14,13 @@
   <header class="hero">
     <h1>Arena dei Mostri — <span class="accent">API del bot</span></h1>
     <p>Sei l'allenatore: scegli la squadra e, a ogni turno, decidi se attaccare
-      (in due modi), difenderti o cambiare mostro. La panchina avversaria è un mistero.</p>
+      (in tre modi), difenderti, curarti o cambiare mostro. La panchina avversaria è un mistero.</p>
   </header>
 
   <h2>Come funziona</h2>
-  <p>Squadre di <strong>3 mostri</strong> scelti da un roster comune di 8. Ogni turno entrambi
+  <p>Squadre di <strong>3 mostri</strong> scelti da un roster comune di 12. Ogni turno entrambi
     gli allenatori scelgono <strong>simultaneamente</strong>. I cambi si risolvono per primi,
-    poi agisce il mostro più <strong>veloce</strong>. Un mostro a 0 HP è KO e va sostituito.
+    poi le cure e le difese, infine attacca il mostro più <strong>veloce</strong>. A pari velocità gli attacchi sono simultanei. Un mostro a 0 HP è KO e va sostituito.
     Vince chi azzera la squadra avversaria; dopo 60 turni decide chi ha più HP percentuali.</p>
 
   <h2>La busta comune</h2>
@@ -28,19 +28,33 @@
     <code>match</code> (UUID costante per la partita); a inizio partita arriva un annuncio con
     i campi a <code>null</code> da ignorare. Gli esempi omettono la busta per brevità.</p>
 
-  <h2>I tipi e i due attacchi</h2>
+  <h2>I tipi e i tre attacchi</h2>
   <p>Quattro tipi in ciclo — <strong>fuoco → erba → elettro → acqua → fuoco</strong>: ognuno è
     superefficace (×2) sul successivo e resistito (×0.5) sul precedente e sul proprio tipo; i
     tipi «opposti» si fanno danno pieno (×1).</p>
-  <p>Ogni mostro ha <strong>due attacchi</strong>, entrambi del suo tipo:</p>
+  <p>Ogni mostro ha <strong>tre attacchi</strong>: i primi due del suo tipo, il terzo di tipo normale:</p>
   <table>
     <tr><th>Indice</th><th>Attacco</th><th>Potenza</th><th>Precisione</th></tr>
     <tr><td><code>0</code></td><td>forte</td><td>alta (45)</td><td>70% — può fallire!</td></tr>
     <tr><td><code>1</code></td><td>preciso</td><td>media (27)</td><td>100% — sempre a segno</td></tr>
+    <tr><td><code>2</code></td><td>jolly, tipo normale</td><td>24, senza vantaggi o resistenze di tipo</td><td>100% — sempre a segno</td></tr>
   </table>
   <p>Danno = <code>potenza × moltiplicatore</code> (arrotondato), se l'attacco va a segno. Il
     forte rende di più a lungo andare, ma il preciso è una sicurezza — utile per chiudere un
     mostro quasi KO senza rischiare il buco a vuoto.</p>
+  <p>Il jolly è utile contro una resistenza: 24 danni invece dei 14 del preciso resistito.
+    La difesa dimezza anche il danno del jolly. Gli indici dei mostri originali (0–7) e
+    degli attacchi forte e preciso (0 e 1) restano invariati; i nuovi mostri sono 8–11.</p>
+
+  <h2>Due cure per squadra</h2>
+  <p><code>["cura"]</code> recupera fino a <strong>35 HP</strong> sul mostro in campo,
+    senza superare il massimo. Consuma il turno e una delle <strong>2 cure condivise
+    dalla squadra</strong>. Si risolve prima degli attacchi, indipendentemente dalla velocità,
+    ma non protegge dal danno. Non è valida a vita piena, dopo un KO, senza cure rimaste
+    o durante la fase <code>replace</code>.</p>
+  <p><code>you.healsLeft</code> e <code>opp.healsLeft</code> indicano le cure rimaste;
+    <code>lastTurn.you.healed</code> e <code>lastTurn.opp.healed</code> indicano gli HP
+    effettivamente recuperati nel turno precedente. Una nuova partita ripristina le due cure.</p>
 
   <h2>La difesa</h2>
   <p>L'azione <code>["difendi"]</code> mette il mostro in guardia per quel turno: <strong>dimezza
@@ -53,7 +67,8 @@
     mostri (distinti):</p>
   <pre><code>{"phase": "draft", "roster": [{"name": "Bracino", "type": "fuoco", "maxHp": 80, "speed": 95,
   "moves": [{"name": "Vampata", "type": "fuoco", "power": 45, "accuracy": 0.7},
-            {"name": "Graffio", "type": "fuoco", "power": 27, "accuracy": 1.0}]}, ...],
+            {"name": "Graffio", "type": "fuoco", "power": 27, "accuracy": 1.0},
+            {"name": "Colpo jolly", "type": "normale", "power": 24, "accuracy": 1.0}]}, ...],
  "picks": 3, ...}</code></pre>
   <pre><code>{"team": [0, 4, 7]}</code></pre>
   <p>Il primo mostro della squadra parte in campo. Squadra non valida = sconfitta.</p>
@@ -63,13 +78,13 @@
       campo</strong> e quanti gliene restano — la sua <strong>panchina è segreta</strong> —, più
     il resoconto del turno precedente:</p>
   <pre><code>{"phase": "battle", "turn": 4,
- "you": {"active": 0, "team": [{"name": "Bracino", "type": "fuoco", "hp": 42, "maxHp": 80,
+ "you": {"active": 0, "healsLeft": 2, "team": [{"name": "Bracino", "type": "fuoco", "hp": 42, "maxHp": 80,
           "speed": 95, "moves": [...]}, ...]},
  "opp": {"active": {"name": "Ondina", "type": "acqua", "hp": 60, "maxHp": 105, "speed": 75,
-          "moves": [...]}, "alive": 3, "bench": 2},
+          "moves": [...]}, "alive": 3, "bench": 2, "healsLeft": 1},
  "lastTurn": {
-   "you": {"action": ["attacca", 0], "hit": true, "dealt": 30, "taken": 20, "reflected": 0},
-   "opp": {"action": "attacca", "move": "forte", "hit": true, "dealt": 20}
+   "you": {"action": ["attacca", 0], "hit": true, "dealt": 30, "taken": 20, "reflected": 0, "healed": 0},
+   "opp": {"action": "attacca", "move": "forte", "hit": true, "dealt": 20, "healed": 0}
  },
  "winner": null}</code></pre>
   <table>
@@ -83,7 +98,9 @@
   <h2>La tua risposta</h2>
   <pre><code>{"move": ["attacca", 0]}    forte (rischioso)
 {"move": ["attacca", 1]}    preciso
+{"move": ["attacca", 2]}    jolly, tipo normale
 {"move": ["difendi"]}
+{"move": ["cura"]}          una cura della squadra, fino a 35 HP
 {"move": ["cambia", 2]}     mostro vivo, diverso da quello in campo</code></pre>
   <p>Dopo un KO ricevi <code>"phase": "replace"</code>: lì è ammesso solo
     <code>["cambia", i]</code>. Azione non valida, tempo scaduto o disconnessione = sconfitta.
@@ -111,6 +128,8 @@ def scegli(state):
                 if m["hp"] &gt; 0 and i != state["you"]["active"]]
         return ["cambia", vivi[0]]
     lui = state["opp"]["active"]
+    if state["you"].get("healsLeft", 0) &gt; 0 and io["hp"] &lt;= io["maxHp"] / 2:
+        return ["cura"]
     ev = [m["power"] * mult(m["type"], lui["type"]) * m["accuracy"] for m in io["moves"]]
     return ["attacca", ev.index(max(ev))]
 
@@ -136,6 +155,8 @@ def rispondi(state):
       per ricostruire la sua squadra col passare dei turni.</li>
     <li>C'è dell'alea (gli attacchi forti possono fallire): ragiona sui <strong>valori
         attesi</strong>, non sul singolo colpo.</li>
+    <li><strong>Conserva le cure:</strong> curare un mostro che subisce subito più di 35 danni
+      può essere meno utile che cambiare. Prova diversi ordini delle carte.</li>
   </ul>
 </body>
 

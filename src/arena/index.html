@@ -10,12 +10,34 @@
   <link rel="stylesheet" href="style.css">
 </head>
 
-<body class="game-page">
+<body class="game-page arena-page">
   <header>
     <a class="back" href="../">&larr; Home</a>
     <h1><span class="game-icon">🦊</span> Arena dei Mostri</h1>
     <a class="api-link" href="docs.html">API per il bot</a>
   </header>
+
+  <section class="arena-intro" aria-label="Benvenuto nell’Arena">
+    <span class="arena-kicker">12 CREATURE · LA TUA SQUADRA DI 3</span>
+    <h2>La forza conta.<br><span>La strategia ancora di più.</span></h2>
+    <p>Scegli i tuoi compagni, scopri i tipi e insegna al bot quando attaccare, cambiare o curarsi.</p>
+    <a class="btn small" href="../editor/?game=arena#carte">Crea la strategia con le carte →</a>
+    <details class="arena-guide">
+      <summary>Le regole in un minuto</summary>
+      <p>Scegli 3 mostri diversi: il primo entra in campo. Ogni turno scegli un’azione; poi si risolvono le scelte di entrambi. Se giocate in due sullo stesso PC, passatevi i comandi.</p>
+      <div class="type-cycle" aria-label="Ogni tipo è forte contro il successivo, acqua contro fuoco">
+        <span class="type-badge type-fuoco">🔥 Fuoco</span> → <span class="type-badge type-erba">🌿 Erba</span> → <span class="type-badge type-elettro">⚡ Elettro</span> → <span class="type-badge type-acqua">💧 Acqua</span> → 🔥
+      </div>
+      <p>Forte contro il tipo successivo: <strong>danno doppio</strong>. Contro il precedente o lo stesso tipo: <strong>metà danno</strong>. Negli altri casi: danno normale.</p>
+      <ul>
+        <li><strong>Attacca:</strong> forte ma rischioso, preciso oppure jolly. Il jolly fa 24 danni contro tutti i tipi; la difesa può dimezzarli.</li>
+        <li><strong>Difendi:</strong> dimezza il colpo e restituisce parte del danno.</li>
+        <li><strong>Cura:</strong> recupera fino a 35 punti vita prima degli attacchi. Hai solo 2 cure per tutta la squadra e quel turno non attacchi.</li>
+        <li><strong>Cambia:</strong> manda un compagno in campo prima degli attacchi. Dopo un KO il cambio è obbligatorio e non consuma un turno.</li>
+      </ul>
+      <p>Attacca prima il mostro più veloce. Vince chi manda KO i tre avversari; dopo 60 turni conta la salute rimasta. Quando giochi tu, puoi pensare senza fretta.</p>
+    </details>
+  </section>
 
   <section id="setup">
     <div class="player-card" id="card-P1">
@@ -84,6 +106,7 @@
   <!-- draft dell'umano -->
   <div id="draft-panel" hidden>
     <h3 id="draft-title">Scegli 3 mostri</h3>
+    <p id="draft-count" role="status">0/3 scelti · Il primo entra in campo.</p>
     <div id="draft-roster"></div>
     <button id="draft-confirm" class="btn primary" disabled>Conferma la squadra</button>
   </div>
@@ -92,6 +115,7 @@
   <div id="arena" class="idle">
     <div class="battle-side" id="side-P1">
       <div class="bench" id="bench-P1"></div>
+      <div class="heal-count" id="heals-P1">💚 Cure rimaste: 2/2</div>
       <div class="fighter" id="fighter-P1">
         <div class="sprite" id="sprite-P1">❔</div>
         <div class="fighter-info">
@@ -104,6 +128,7 @@
     <div class="battle-center">⚔️</div>
     <div class="battle-side flip" id="side-P2">
       <div class="bench" id="bench-P2"></div>
+      <div class="heal-count" id="heals-P2">💚 Cure rimaste: 2/2</div>
       <div class="fighter" id="fighter-P2">
         <div class="sprite" id="sprite-P2">❔</div>
         <div class="fighter-info">

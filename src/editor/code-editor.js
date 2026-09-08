@@ -4,7 +4,7 @@ import { python } from '@codemirror/lang-python'
 import { oneDark } from '@codemirror/theme-one-dark'
 
 // Le textarea restano la fonte usata da salvataggio, prove e upload sul Pico.
-for (const source of document.querySelectorAll('#code, #generated-carte, #generated')) {
+for (const source of document.querySelectorAll('#code, #generated-carte, #generated, #browser-code')) {
   const editable = source instanceof HTMLTextAreaElement
   const read = () => editable ? source.value : source.textContent
   const container = document.createElement('div')

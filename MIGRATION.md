@@ -9,7 +9,7 @@ HTML, CSS e JavaScript classico. I motori di gioco non sono stati riscritti.
   `src/home/siteConfig.js` espone la stessa configurazione a React.
 - `src/editor/` — carte, blocchi Blockly, editor Python CodeMirror, prove e upload USB.
 - `src/<gioco>/` — pagina, motore e documentazione di ciascun gioco.
-- `src/remote/` — stanze online del Tris, ogni partecipante con il proprio Pico.
+- `src/remote/` — stanze online del Tris, ogni partecipante con Pico USB o Python nel browser (Web Worker terminabile).
 - `server/index.js` — server HTTP/WebSocket e arbitro del Tris, stanze in memoria.
 - `src/lezioni/` — guida docente, con una prima attività breve per la quinta primaria.
 - `examples/` — bot MicroPython di esempio; non fanno parte della build.

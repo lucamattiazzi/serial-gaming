@@ -13,7 +13,7 @@ const send = (client, message) => {
   if (client?.socket.readyState === WebSocket.OPEN) client.socket.send(JSON.stringify(message))
 }
 
-/** Server per stanze Tris a due Pico. I timer e la validità delle mosse sono dell'arbitro. */
+/** Server per stanze Tris a due bot. I timer e la validità delle mosse sono dell'arbitro. */
 export function createGameServer({ staticDir = DIST, moveTimeoutMs = 5000, publicOrigin = '' } = {}) {
   const root = resolve(staticDir)
   const rooms = new Map()
@@ -148,7 +148,7 @@ export function createGameServer({ staticDir = DIST, moveTimeoutMs = 5000, publi
         case 'ready':
           if (!room || typeof message.ready !== 'boolean') { fail('Entra prima in una stanza.'); return }
           if (room.running) {
-            if (!message.ready) closeRoom(room, 'Un Pico è stato scollegato: partita interrotta.')
+            if (!message.ready) closeRoom(room, 'Un bot è stato scollegato: partita interrotta.')
             return
           }
           client.ready = message.ready
@@ -156,7 +156,7 @@ export function createGameServer({ staticDir = DIST, moveTimeoutMs = 5000, publi
           return
         case 'start':
           if (!room || client.role !== 'X') { fail('Può iniziare solo chi ha creato la stanza.'); return }
-          if (room.running || !room.players.X.ready || !room.players.O?.ready) { fail('Collegate entrambi i Pico prima di iniziare.'); return }
+          if (room.running || !room.players.X.ready || !room.players.O?.ready) { fail('Preparate entrambi i bot prima di iniziare.'); return }
           Object.assign(room, { running: true, match: randomUUID(), board: Array(9).fill(''), turn: Math.random() < .5 ? 'X' : 'O', winner: null, lastMove: null })
           for (const role of ['X', 'O']) botState(room, role, null, null)
           roomInfo(room)

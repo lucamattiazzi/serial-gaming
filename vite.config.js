@@ -33,7 +33,7 @@ for (const game of GAMES) {
 function copyClassicAssets() {
   const srcDir = resolve(__dirname, 'src')
   const outDir = resolve(__dirname, 'dist')
-  const modules = new Set([page('editor/code-editor.js'), page('remote/script.js')])
+  const modules = new Set([page('editor/code-editor.js'), page('remote/script.js'), page('remote/browser-bot.js'), page('remote/python-worker.js')])
   const wanted = (name) => name.endsWith('.js') || name.endsWith('.css')
 
   function walk(dir, files = []) {

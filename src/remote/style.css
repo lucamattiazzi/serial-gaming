@@ -4,11 +4,16 @@
 .remote-page h1 { font-size: clamp(32px, 5vw, 48px); line-height: 1.15; letter-spacing: -1px; margin: 20px 0; }
 .remote-page h1 span { color: var(--accent); }
 .remote-page .intro { max-width: 720px; color: var(--text-dim); }
-.remote-setup { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin: 32px 0; }
+.remote-setup { display: grid; grid-template-columns: 1fr 1fr; align-items: start; gap: 24px; margin: 32px 0; }
 .remote-card { border: 1px solid var(--border); border-radius: 16px; padding: 24px; background: var(--bg-card); min-width: 0; }
 .remote-card h2 { margin: 0; font-size: 21px; }
 .remote-card p { color: var(--text-dim); font-size: 15px; }
 .remote-card .btn { margin: 6px 0; }
+#bot-engine { display: block; width: 100%; margin: 10px 0 18px; padding: 12px; background: var(--bg-soft); color: var(--text); border: 1px solid var(--border); border-radius: 8px; font: inherit; }
+.remote-card label { display: block; margin-top: 20px; }
+#browser-editor { min-width: 0; margin-top: 12px; }
+#browser-status { overflow-wrap: anywhere; white-space: pre-wrap; }
+.remote-card .code-hint { font-size: 13px; }
 .join-row { display: flex; align-items: center; gap: 10px; }
 #room-code { background: var(--bg-soft); color: var(--text); border: 1px solid var(--border); border-radius: 8px; min-width: 0; width: 100%; padding: 12px; font: 17px var(--font-mono); text-transform: uppercase; }
 #share-code { display: block; font: 26px var(--font-mono); letter-spacing: 3px; color: var(--accent); overflow-wrap: anywhere; }

@@ -410,6 +410,8 @@ def rispondi(state):
 # ritorna una di queste azioni entro 2 secondi:
 #   ["attacca", 0]  attacco forte  (potente ma puo' fallire)
 #   ["attacca", 1]  attacco preciso (meno potente, sempre a segno)
+#   ["attacca", 2]  colpo jolly (24 danni, nessun vantaggio o resistenza di tipo)
+#   ["cura"]       recuperi fino a 35 HP: due cure per squadra, consumi il turno
 #   ["difendi"]     dimezzi il danno ricevuto e ne restituisci una parte
 #   ["cambia", i]   mandi in campo il mostro i (vivo, non quello gia' in campo)
 # Con "phase":"replace" (dopo un KO) e' ammesso solo ["cambia", i].
@@ -438,6 +440,8 @@ def scegli(state):
                 if m["hp"] > 0 and i != state["you"]["active"]]
         return ["cambia", vivi[0]]
     lui = state["opp"]["active"]
+    if state["you"].get("healsLeft", 0) > 0 and io["hp"] <= io["maxHp"] / 2:
+        return ["cura"]
     # scegli l'attacco col miglior valore atteso (potenza * efficacia * precisione)
     ev = [m["power"] * moltiplicatore(m["type"], lui["type"]) * m["accuracy"]
           for m in io["moves"]]

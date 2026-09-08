@@ -5,6 +5,8 @@ const CPU_MOVE_DELAY_MS = 350
 const EVENT_PAUSE_MS = 700       // pausa tra gli eventi del turno, per seguire la battaglia
 const MAX_TURNS = 60             // oltre: decide chi ha più HP percentuali
 const TEAM_SIZE = 3
+const TEAM_HEALS = 2
+const HEAL_AMOUNT = 35
 const DEFEND_REDUCTION = 0.5    // difendendosi si dimezza il danno ricevuto…
 const DEFEND_REFLECT = 0.35     // …e se ne restituisce una parte all'attaccante
 const SERIES_GAMES = 5
@@ -24,14 +26,16 @@ function isPicoLike(type) {
 }
 
 // ── Il bestiario ─────────────────────────────────────────────
-// Ogni mostro ha DUE attacchi (indice 0 e 1), entrambi del suo tipo:
+// I primi due attacchi restano compatibili con i bot già caricati:
 //   0 = forte   → tanta potenza ma può fallire (precisione bassa)
 //   1 = preciso → meno potenza ma va sempre a segno
+//   2 = jolly   → tipo normale, danno costante contro qualsiasi tipo
 // Le emoji sono segnaposto: per usare delle sprite basta cambiare spriteFor().
 function attacks(type, strongName, preciseName) {
   return [
     { name: strongName, type, power: 45, accuracy: 0.7 },
     { name: preciseName, type, power: 27, accuracy: 1.0 },
+    { name: 'Colpo jolly', type: 'normale', power: 24, accuracy: 1.0 },
   ]
 }
 
@@ -44,6 +48,11 @@ const ROSTER = [
   { name: 'Quercione', type: 'erba', emoji: '🐢', maxHp: 125, speed: 30, moves: attacks('erba', 'Radicata', 'Rametto') },
   { name: 'Volterio', type: 'elettro', emoji: '🐦', maxHp: 82, speed: 90, moves: attacks('elettro', 'Saetta', 'Beccata') },
   { name: 'Tuonotauro', type: 'elettro', emoji: '🐂', maxHp: 100, speed: 50, moves: attacks('elettro', 'Fulmine', 'Cornata') },
+  // Aggiunti in fondo: gli indici 0–7 dei bot esistenti non cambiano.
+  { name: 'Fiammicio', type: 'fuoco', emoji: '🐈', maxHp: 100, speed: 65, moves: attacks('fuoco', 'Coda ardente', 'Scintilla') },
+  { name: 'Corallino', type: 'acqua', emoji: '🦀', maxHp: 95, speed: 70, moves: attacks('acqua', 'Vortice', 'Bolla') },
+  { name: 'Spinetta', type: 'erba', emoji: '🦔', maxHp: 105, speed: 55, moves: attacks('erba', 'Roveto', 'Spina') },
+  { name: 'Scintillo', type: 'elettro', emoji: '🐇', maxHp: 92, speed: 70, moves: attacks('elettro', 'Balzo elettrico', 'Scossa') },
 ]
 
 // Ciclo dei tipi: ognuno è forte (x2) sul successivo e debole (x0.5)
@@ -79,6 +88,7 @@ function makeBattle(picksP1, picksP2) {
   return {
     teams: { P1: build(picksP1), P2: build(picksP2) },
     active: { P1: 0, P2: 0 },
+    heals: { P1: TEAM_HEALS, P2: TEAM_HEALS },
     turn: 0,
     lastSummary: null, // riassunto del turno precedente (per il campo lastTurn)
   }
@@ -98,7 +108,7 @@ function teamWiped(battle, id) {
   return battle.teams[id].every(m => m.hp <= 0)
 }
 
-// azione: ["attacca", 0|1] · ["difendi"] · ["cambia", indiceMostro]
+// azione: ["attacca", 0|1|2] · ["difendi"] · ["cura"] · ["cambia", indiceMostro]
 function validAction(battle, id, action, replaceOnly = false) {
   if (!Array.isArray(action) || action.length < 1) return false
   const [kind, index] = action
@@ -108,6 +118,10 @@ function validAction(battle, id, action, replaceOnly = false) {
     return target !== undefined && target.hp > 0 && index !== battle.active[id]
   }
   if (replaceOnly) return false // dopo un KO si può solo cambiare
+  if (kind === 'cura') {
+    const mon = activeMonster(battle, id)
+    return action.length === 1 && battle.heals[id] > 0 && mon.hp > 0 && mon.hp < mon.maxHp
+  }
   if (kind === 'difendi') {
     return activeMonster(battle, id).hp > 0
   }
@@ -125,8 +139,8 @@ function resolveTurn(battle, actions, rng = Math.random) {
   const events = []
   battle.turn++
   const summary = {
-    P1: { action: actions.P1, hit: null, dealt: 0, taken: 0, reflected: 0 },
-    P2: { action: actions.P2, hit: null, dealt: 0, taken: 0, reflected: 0 },
+    P1: { action: actions.P1, hit: null, dealt: 0, taken: 0, reflected: 0, healed: 0 },
+    P2: { action: actions.P2, hit: null, dealt: 0, taken: 0, reflected: 0, healed: 0 },
   }
 
   // 1) i cambi hanno la priorità
@@ -139,7 +153,19 @@ function resolveTurn(battle, actions, rng = Math.random) {
     }
   }
 
-  // 2) le difese sono una "posa" del turno (mitigano e restituiscono danno)
+  // 2) la cura precede gli attacchi, ma non protegge dal loro danno.
+  for (const id of ['P1', 'P2']) {
+    if (actions[id][0] === 'cura') {
+      const mon = activeMonster(battle, id)
+      const healed = Math.min(HEAL_AMOUNT, mon.maxHp - mon.hp)
+      mon.hp += healed
+      battle.heals[id]--
+      summary[id].healed = healed
+      events.push({ kind: 'heal', id, monster: mon.name, healed })
+    }
+  }
+
+  // 3) le difese sono una "posa" del turno (mitigano e restituiscono danno)
   const defending = { P1: false, P2: false }
   for (const id of ['P1', 'P2']) {
     if (actions[id][0] === 'difendi') {
@@ -148,7 +174,7 @@ function resolveTurn(battle, actions, rng = Math.random) {
     }
   }
 
-  // 3) gli attacchi, in ordine di velocità (pari velocità: simultanei)
+  // 4) gli attacchi, in ordine di velocità (pari velocità: simultanei)
   const attackers = ['P1', 'P2'].filter(id => actions[id][0] === 'attacca')
   let simultaneous = false
   let ordered = attackers
@@ -261,14 +287,16 @@ function cpuAction(battle, id, level, replaceOnly) {
 
   if (level === PLAYER_TYPES.CPU_RANDOM) {
     const r = Math.random()
+    if (validAction(battle, id, ['cura']) && me.hp <= me.maxHp / 2 && r < 0.2) return ['cura']
     if (bench.length > 0 && r < 0.12) return ['cambia', bench[Math.floor(Math.random() * bench.length)].i]
     if (r < 0.22) return ['difendi']
-    return ['attacca', Math.random() < 0.5 ? 0 : 1]
+    return ['attacca', Math.floor(Math.random() * me.moves.length)]
   }
 
   // CPU allenatore
   const foeThreat = bestEvAgainst(foe, me)
   const bestBench = bench.length ? [...bench].sort((a, b) => matchup(b.m) - matchup(a.m))[0] : null
+  if (validAction(battle, id, ['cura']) && me.hp <= me.maxHp / 2 && foeThreat < HEAL_AMOUNT) return ['cura']
 
   // sto per essere messo KO e sono più lento: difenditi (mitiga + contraccolpo),
   // a meno che in panchina non ci sia un mostro decisamente migliore
@@ -437,6 +465,7 @@ function seriesAvailable() {
 }
 
 function updateControls() {
+  document.body.classList.toggle('battle-running', gameActive)
   for (const id of ['P1', 'P2']) {
     const player = players[id]
     const connected = player.serial !== null
@@ -497,6 +526,7 @@ function renderBattle(hurtId = null) {
     fill.classList.toggle('mid', ratio <= 0.55 && ratio > 0.25)
     fill.classList.toggle('low', ratio <= 0.25)
     document.getElementById(`hptext-${id}`).textContent = `${mon.hp}/${mon.maxHp} HP · velocità ${mon.speed}`
+    document.getElementById(`heals-${id}`).textContent = `💚 Cure rimaste: ${battle.heals[id]}/${TEAM_HEALS}`
 
     const bench = document.getElementById(`bench-${id}`)
     bench.innerHTML = ''
@@ -542,7 +572,7 @@ async function startGame() {
 
   let picks
   try {
-    picks = await Promise.all(['P1', 'P2'].map(getDraft))
+    picks = await collectChoices(['P1', 'P2'], getDraft)
   } catch (fault) {
     stopTimerDisplay()
     if (!gameActive) return
@@ -553,7 +583,7 @@ async function startGame() {
 
   battle = makeBattle(picks[0], picks[1])
   for (const id of ['P1', 'P2']) {
-    logBattle(`Allenatore ${playerNumber(id)}: ${battle.teams[id].map(m => m.name).join(', ')}`)
+    logBattle(`Allenatore ${playerNumber(id)}: entra ${activeMonster(battle, id).name}!`)
   }
   renderBattle()
   battleLoop()
@@ -603,8 +633,10 @@ function humanDraft(id) {
       `Allenatore ${playerNumber(id)}: scegli ${TEAM_SIZE} mostri`
     draftRoster.innerHTML = ''
     ROSTER.forEach((mon, i) => {
-      const card = document.createElement('div')
+      const card = document.createElement('button')
+      card.type = 'button'
       card.classList.add('roster-card')
+      card.setAttribute('aria-pressed', 'false')
       card.innerHTML = `<div class="r-sprite">${spriteFor(mon)}</div>
         <div class="r-name">${mon.name}</div>
         <span class="type-badge type-${mon.type}">${mon.type}</span>
@@ -613,11 +645,14 @@ function humanDraft(id) {
         if (picked.has(i)) picked.delete(i)
         else if (picked.size < TEAM_SIZE) picked.add(i)
         card.classList.toggle('picked', picked.has(i))
+        card.setAttribute('aria-pressed', String(picked.has(i)))
         draftConfirm.disabled = picked.size !== TEAM_SIZE
+        document.getElementById('draft-count').textContent = `${picked.size}/${TEAM_SIZE} scelti · Il primo entra in campo.`
       })
       draftRoster.appendChild(card)
     })
     draftConfirm.disabled = true
+    document.getElementById('draft-count').textContent = `0/${TEAM_SIZE} scelti · Il primo entra in campo.`
     draftConfirm.onclick = () => {
       draftPanel.hidden = true
       resolve([...picked])
@@ -645,6 +680,7 @@ async function battleLoop() {
       if (!gameActive) return
       for (const [i, id] of mustReplace.entries()) {
         battle.active[id] = actions[i][1]
+        activeMonster(battle, id).seen = true
         logBattle(`▶ L'Allenatore ${playerNumber(id)} manda in campo ${activeMonster(battle, id).name}!`)
       }
       renderBattle()
@@ -680,6 +716,9 @@ async function battleLoop() {
       } else if (event.kind === 'defend') {
         logBattle(`🛡️ ${event.monster} si mette in difesa.`)
         renderBattle()
+      } else if (event.kind === 'heal') {
+        logBattle(`💚 ${event.monster} recupera ${event.healed} HP. Cure rimaste: ${battle.heals[event.id]}.`)
+        renderBattle()
       } else if (!event.hit) {
         logBattle(`💨 ${event.attacker} tenta ${event.move}… ma manca il colpo!`)
       } else {
@@ -696,10 +735,20 @@ async function battleLoop() {
 }
 
 // raccoglie le azioni (simultanee) dai giocatori indicati
+// Due umani condividono lo stesso pannello: scelgono a turno, poi si risolve insieme.
+async function collectChoices(ids, choose) {
+  if (ids.length > 1 && ids.every(id => players[id].type === PLAYER_TYPES.HUMAN)) {
+    const choices = []
+    for (const id of ids) choices.push(await choose(id))
+    return choices
+  }
+  return Promise.all(ids.map(choose))
+}
+
 function collectActions(ids, replaceOnly) {
   const somePico = ids.some(id => isPicoLike(players[id].type))
   if (somePico) startTimerDisplay(MOVE_TIME_LIMIT_MS)
-  return Promise.all(ids.map(id => getAction(id, replaceOnly)))
+  return collectChoices(ids, id => getAction(id, replaceOnly))
 }
 
 function getAction(id, replaceOnly) {
@@ -733,7 +782,7 @@ function humanAction(id, replaceOnly) {
     commandPanel.hidden = false
     commandLabel.textContent = replaceOnly
       ? `Allenatore ${playerNumber(id)}: il tuo mostro è KO, manda in campo il prossimo!`
-      : `Allenatore ${playerNumber(id)}: attacca o cambia.`
+      : `Allenatore ${playerNumber(id)}: attacca, difendi, cura o cambia.`
     moveButtons.innerHTML = ''
     switchButtons.innerHTML = ''
 
@@ -751,8 +800,8 @@ function humanAction(id, replaceOnly) {
         const mult = typeMultiplier(move.type, foe.type)
         const hint = mult > 1 ? ' ↑' : mult < 1 ? ' ↓' : ''
         const acc = Math.round(move.accuracy * 100)
-        const kind = i === 0 ? 'forte' : 'preciso'
-        button.innerHTML = `${move.name} <span class="type-badge type-${move.type}">${move.type}</span> ${move.power}${hint} · ${acc}% <small>${kind}</small>`
+        const kind = ['forte', 'preciso', 'jolly'][i]
+        button.innerHTML = `${move.name} <span class="type-badge type-${move.type}">${move.type}</span> <small>${kind} · ${Math.round(move.power * mult)} danni${hint} · ${acc}% a segno</small>`
         button.addEventListener('click', () => done(['attacca', i]))
         moveButtons.appendChild(button)
       })
@@ -762,6 +811,13 @@ function humanAction(id, replaceOnly) {
       defendButton.title = 'Dimezza il danno ricevuto e ne restituisci una parte all\'avversario'
       defendButton.addEventListener('click', () => done(['difendi']))
       moveButtons.appendChild(defendButton)
+      const healButton = document.createElement('button')
+      healButton.classList.add('btn', 'small')
+      healButton.textContent = `💚 Cura +${HEAL_AMOUNT} HP (${battle.heals[id]} rimaste)`
+      healButton.title = 'Recupera fino a 35 HP prima degli attacchi. Consuma il turno e una cura della squadra.'
+      healButton.disabled = !validAction(battle, id, ['cura'])
+      healButton.addEventListener('click', () => done(['cura']))
+      moveButtons.appendChild(healButton)
     }
     battle.teams[id].forEach((m, i) => {
       if (m.hp <= 0 || i === battle.active[id]) return
@@ -778,6 +834,7 @@ function humanAction(id, replaceOnly) {
 function ownView(id) {
   return {
     active: battle.active[id],
+    healsLeft: battle.heals[id],
     team: battle.teams[id].map(m => ({
       name: m.name, type: m.type, hp: m.hp, maxHp: m.maxHp, speed: m.speed, moves: m.moves,
     })),
@@ -792,6 +849,7 @@ function oppView(id) {
   return {
     active: { name: mon.name, type: mon.type, hp: mon.hp, maxHp: mon.maxHp, speed: mon.speed, moves: mon.moves },
     alive,                                      // mostri ancora vivi (attivo compreso)
+    healsLeft: battle.heals[id],
     bench: Math.max(0, alive - (mon.hp > 0 ? 1 : 0)), // quanti in riserva (identità ignote)
   }
 }
@@ -803,12 +861,13 @@ function lastTurnFor(id) {
   const you = s[id]
   const opp = s[otherId(id)]
   return {
-    you: { action: you.action, hit: you.hit, dealt: you.dealt, taken: you.taken, reflected: you.reflected },
+    you: { action: you.action, hit: you.hit, dealt: you.dealt, taken: you.taken, reflected: you.reflected, healed: you.healed },
     opp: {
-      action: opp.action[0], // "attacca" | "difendi" | "cambia" (non si svela quale mostro)
-      move: opp.action[0] === 'attacca' ? (opp.action[1] === 0 ? 'forte' : 'preciso') : null,
+      action: opp.action[0], // "attacca" | "difendi" | "cura" | "cambia" (non si svela quale mostro)
+      move: opp.action[0] === 'attacca' ? ['forte', 'preciso', 'jolly'][opp.action[1]] : null,
       hit: opp.hit,
       dealt: opp.dealt, // danni che ti ha inflitto
+      healed: opp.healed,
     },
   }
 }
