@@ -279,3 +279,22 @@
     display: none;
   }
 }
+
+/* La preparazione lascia spazio alla partita. */
+.arena-page { max-width: 840px; }
+.arena-intro, .battle-running .arena-intro { background: transparent; padding: 0; border: 0; margin-bottom: 20px; }
+.arena-intro > p { margin-top: 0; font-size: 16px; }
+.arena-guide { border: 0; margin-top: 8px; padding: 0; }
+.arena-guide summary { font-size: 15px; padding: 8px 0; }
+.battle-running #setup, .battle-running .actions, .battle-running #series-row, .battle-running .arena-lab-link { display: none; }
+.arena-page #timer.idle { display: none; }
+#status-display { margin: 4px 0 18px; }
+#battle-history { width: 100%; margin-block: 12px; }
+#battle-history summary { cursor: pointer; padding: 10px 0; color: var(--text-dim); }
+.arena-lab-link { font-size: 14px; }
+.arena-page .btn { box-shadow: none; border-radius: 10px; }
+#move-buttons .btn { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; }
+#move-buttons small { font-size: 13px; color: var(--text-dim); }
+#draft-roster { grid-template-columns: repeat(4, 1fr); }
+.roster-card .r-stats { font-family: inherit; font-size: 13px; margin-top: 5px; }
+@media (max-width: 600px) { #draft-roster { grid-template-columns: repeat(2, 1fr); } }

@@ -16,63 +16,27 @@ function BotDrawing() {
   </svg>
 }
 
-function HeroSketch() {
-  return <div className="hero-sketch" aria-hidden="true">
-    <span className="sketch-note">Una tua idea. La sua prossima mossa.</span>
-    <div className="sketch-board">{['×', '', '○', '', '○', '', '×', '', '×'].map((mark, i) =>
-      <span key={i} className={mark === '○' ? 'circle-mark' : ''}>{mark}</span>)}</div>
-    <div className="rule-sticker"><span>SE il centro è libero…</span><strong>…gioca al centro! <span>↗</span></strong></div>
-    <div className="bot-sticker"><BotDrawing /><span>Ci penso io!</span></div>
-    <span className="sketch-star">✳</span>
-    <span className="sketch-caption">Piccole regole, grandi idee.</span>
-  </div>
-}
-
 function GamesView() {
   const games = GAMES.filter(g => !SITE_CONFIG.hiddenGames.includes(g.id) && g.id !== 'torneo')
-  const [filter, setFilter] = useState('tutti')
-  const visible = games.filter(g => filter === 'tutti' || g.level === filter)
   return <>
     <section className="welcome" aria-labelledby="welcome-title">
-      <div className="welcome-copy">
-        <span className="eyebrow"><span className="little-dot" /> IL LABORATORIO DELLE TUE IDEE</span>
-        <h1 id="welcome-title">Giocare è bello.<br />Insegnare a un bot?<br /><span>Ancora di più.</span></h1>
-        <p>Un bot è un piccolo programma che segue le tue istruzioni. Scegli le sue mosse, caricalo sul tuo Pico e sfida gli altri bot.</p>
-        <div className="hero-actions">
-          <a className="btn primary" href="editor/?game=tictactoe#carte">Crea il tuo primo bot <span aria-hidden="true">↗</span></a>
-          <a className="text-link" href="#spiegazione">Come funziona <span aria-hidden="true">→</span></a>
-        </div>
-        <p className="hero-footnote">Si comincia con le carte. Non serve saper programmare.</p>
-      </div>
-      <HeroSketch />
+      <h1 id="welcome-title">Scegli un gioco.</h1>
+      <p>Gioca tu, poi insegna a un bot come fare.</p>
+      <a className="btn primary" href="editor/?game=tictactoe#carte">Crea il tuo primo bot</a>
     </section>
-
-    <ol className="learning-path" aria-label="Il tuo percorso">
-      <li><span className="step-number">01</span><div><strong>Gioca e osserva</strong><p>Scopri le regole di un gioco.</p></div></li>
-      <li><span className="step-number">02</span><div><strong>Inventa una strategia</strong><p>Metti in fila le carte del tuo bot.</p></div></li>
-      <li><span className="step-number">03</span><div><strong>Carica il bot e sfida</strong><p>Dal laboratorio al tuo RP2040.</p></div></li>
-    </ol>
-
-    <section className="game-library" aria-labelledby="games-title">
-      <div className="section-heading"><div><span className="eyebrow">SCEGLI LA TUA SFIDA</span><h2 id="games-title">Da quale gioco partiamo?</h2></div><span className="section-aside">La curiosità è l’unico requisito.</span></div>
-      <div className="game-filters" role="group" aria-label="Difficoltà dei giochi">
-        {[['tutti', 'Tutti i giochi'], ['inizio', 'Per cominciare'], ['sfida', 'Un passo in più']].map(([id, label]) =>
-          <button key={id} type="button" aria-pressed={filter === id} onClick={() => setFilter(id)}>{label}</button>)}
-        <span aria-live="polite">{visible.length} giochi da esplorare</span>
-      </div>
+    <section className="game-library" aria-label="Giochi">
       <div className="game-grid">
-        {visible.map(g => <article className={`activity-card activity-${g.id}`} key={g.id}>
-          <div className="activity-art" aria-hidden="true"><span>{g.icon}</span><i>✦</i><b>{g.doodle}</b></div>
-          <div className="activity-content"><span className="level-label">{g.level === 'inizio' ? '● Per cominciare' : '◆ Un passo in più'}</span>
-            <h3>{g.title}</h3><p>{g.blurb}</p>
-            <div className="activity-links"><a href={g.href} aria-label={`Gioca a ${g.title}`}>Gioca <span aria-hidden="true">↗</span></a><a href={`editor/?game=${g.id}#carte`} aria-label={`Crea un bot per ${g.title}`}>Crea un bot <span aria-hidden="true">→</span></a></div>
+        {games.map(g => <article className="activity-card" key={g.id}>
+          <span className="game-symbol" aria-hidden="true">{g.icon}</span>
+          <h2>{g.title}</h2>
+          <p>{g.blurb}</p>
+          <div className="activity-links">
+            <a href={g.href} aria-label={`Gioca a ${g.title}`}>Gioca</a>
+            <a href={`editor/?game=${g.id}#carte`} aria-label={`Crea un bot per ${g.title}`}>Crea un bot</a>
           </div>
         </article>)}
       </div>
     </section>
-
-    <aside className="teacher-banner"><span className="teacher-icon" aria-hidden="true">✎</span><div><span className="eyebrow">SI IMPARA MEGLIO INSIEME</span><h2>Un laboratorio, tutta la classe.</h2><p>Attività guidate, domande da fare insieme e idee per chi insegna.</p></div><a className="btn" href="lezioni/">Guida per docenti <span aria-hidden="true">↗</span></a></aside>
-    {!SITE_CONFIG.hiddenGames.includes('torneo') && <p className="tournament-link">Avete già preparato i bot sui Pico? <a href="torneo/">Organizzate un torneo di classe →</a></p>}
   </>
 }
 
@@ -105,9 +69,8 @@ export default function App() {
     <a className="skip-link" href="#contenuto">Salta al contenuto</a>
     <header className="site-header"><a className="site-brand" href="#giochi" aria-label="Serial Gaming, home"><span className="brand-bot"><BotDrawing /></span>serial<span>gaming</span><span className="brand-dot">.</span></a>
       <nav aria-label="Navigazione principale"><a href="#giochi" aria-current={view === 'giochi' ? 'page' : undefined}>Giochi</a><a href="editor/">Laboratorio</a><a href="remote/">Sfida online</a><a href="#spiegazione" aria-current={view === 'spiegazione' ? 'page' : undefined}>Come funziona</a></nav>
-      <a className="teacher-link" href="lezioni/">Per chi insegna <span aria-hidden="true">↗</span></a>
     </header>
     <main id="contenuto" tabIndex="-1">{view === 'giochi' ? <GamesView /> : <SpiegazioneView />}</main>
-    <footer className="site-footer"><span><strong>serial gaming.</strong> Piccoli programmatori, grandi idee.</span><a href="lezioni/">Fatto per imparare, insieme <span aria-hidden="true">✳</span></a></footer>
+    <footer className="site-footer"><a href="lezioni/">Guida per docenti</a>{!SITE_CONFIG.hiddenGames.includes('torneo') && <a href="torneo/">Torneo con i Pico</a>}</footer>
   </div>
 }

@@ -466,6 +466,7 @@ function seriesAvailable() {
 
 function updateControls() {
   document.body.classList.toggle('battle-running', gameActive)
+  arenaEl.hidden = !battle
   for (const id of ['P1', 'P2']) {
     const player = players[id]
     const connected = player.serial !== null
@@ -500,6 +501,7 @@ function highlightTurn(id) {
 }
 
 function logBattle(message) {
+  document.getElementById('battle-history').hidden = false
   battleLog.hidden = false
   battleLog.textContent += message + '\n'
   battleLog.scrollTop = battleLog.scrollHeight
@@ -508,6 +510,7 @@ function logBattle(message) {
 // ── Rendering ────────────────────────────────────────────────
 function renderBattle(hurtId = null) {
   if (!battle) return
+  arenaEl.hidden = false
   for (const id of ['P1', 'P2']) {
     const mon = activeMonster(battle, id)
     const sprite = document.getElementById(`sprite-${id}`)
@@ -525,7 +528,7 @@ function renderBattle(hurtId = null) {
     fill.style.width = `${ratio * 100}%`
     fill.classList.toggle('mid', ratio <= 0.55 && ratio > 0.25)
     fill.classList.toggle('low', ratio <= 0.25)
-    document.getElementById(`hptext-${id}`).textContent = `${mon.hp}/${mon.maxHp} HP · velocità ${mon.speed}`
+    document.getElementById(`hptext-${id}`).textContent = `${mon.hp}/${mon.maxHp} vita · velocità ${mon.speed}`
     document.getElementById(`heals-${id}`).textContent = `💚 Cure rimaste: ${battle.heals[id]}/${TEAM_HEALS}`
 
     const bench = document.getElementById(`bench-${id}`)
@@ -566,9 +569,11 @@ async function startGame() {
   announceMatch()
   battleLog.textContent = ''
   battleLog.hidden = true
+  document.getElementById('battle-history').hidden = true
+  document.getElementById('battle-history').open = false
   arenaEl.classList.remove('idle')
   updateControls()
-  setStatus('Draft: gli allenatori scelgono la squadra…')
+  setStatus('Scegli la tua squadra.')
 
   let picks
   try {
@@ -640,7 +645,7 @@ function humanDraft(id) {
       card.innerHTML = `<div class="r-sprite">${spriteFor(mon)}</div>
         <div class="r-name">${mon.name}</div>
         <span class="type-badge type-${mon.type}">${mon.type}</span>
-        <div class="r-stats">${mon.maxHp} HP · vel ${mon.speed}<br>${mon.moves.map(mv => mv.name).join(' · ')}</div>`
+        <div class="r-stats">${mon.maxHp} vita · velocità ${mon.speed}</div>`
       card.addEventListener('click', () => {
         if (picked.has(i)) picked.delete(i)
         else if (picked.size < TEAM_SIZE) picked.add(i)
@@ -798,10 +803,10 @@ function humanAction(id, replaceOnly) {
         const button = document.createElement('button')
         button.classList.add('btn', 'small')
         const mult = typeMultiplier(move.type, foe.type)
-        const hint = mult > 1 ? ' ↑' : mult < 1 ? ' ↓' : ''
         const acc = Math.round(move.accuracy * 100)
         const kind = ['forte', 'preciso', 'jolly'][i]
-        button.innerHTML = `${move.name} <span class="type-badge type-${move.type}">${move.type}</span> <small>${kind} · ${Math.round(move.power * mult)} danni${hint} · ${acc}% a segno</small>`
+        button.innerHTML = `<strong>${i === 2 ? 'Colpo jolly' : `Attacco ${kind}`}</strong><small>${Math.round(move.power * mult)} danni · ${acc}% a segno</small>`
+        button.title = `${move.name} · tipo ${move.type}`
         button.addEventListener('click', () => done(['attacca', i]))
         moveButtons.appendChild(button)
       })

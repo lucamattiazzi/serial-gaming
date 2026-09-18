@@ -25,31 +25,17 @@
 
   <main id="contenuto">
   <header class="lab-heading">
-    <span class="lab-eyebrow">IL TUO ANGOLO DEGLI ESPERIMENTI</span>
-    <h1>Una carta alla volta, nasce il tuo bot.</h1>
-    <p>Scegli le istruzioni. Cambia il loro ordine. Scopri come gioca il tuo bot.</p>
+    <h1>Crea il tuo bot.</h1>
+    <p>Scegli le istruzioni e prova come gioca.</p>
   </header>
   <div class="action-bar">
     <label for="bot-name">Il tuo bot si chiama</label>
     <input id="bot-name" class="bot-name-input" type="text" maxlength="24"
       placeholder="Es. Capitan Biscotto" aria-label="Nome del bot">
     <span class="spacer"></span>
-    <span id="save-status" role="status">Le modifiche restano in questo browser.</span>
     <button id="try-button" class="btn primary">▶ Prova il bot</button>
+    <a href="#pico" class="pico-shortcut">Carica sul Pico</a>
   </div>
-  <section class="hardware-panel" aria-labelledby="pico-heading">
-    <h2 id="pico-heading">Dal tuo codice alla sfida: caricalo sul Pico</h2>
-    <p>Collega il tuo RP2040 via USB e carica il bot. Poi sfidatevi con due Pico sullo stesso computer, oppure a distanza.</p>
-    <div class="hardware-actions">
-      <button id="connect-button" class="btn connect">🔌 Connetti RP2040</button>
-      <span class="conn-status" id="conn-status">non connesso</span>
-      <button id="upload-button" class="btn primary" disabled>Carica sul Pico</button>
-    </div>
-    <div class="pico-links"><a href="../torneo/">Sfida con due Pico →</a><a href="../remote/">Sfida a distanza →</a></div>
-    <p id="serial-help" hidden>Questo browser non supporta il collegamento USB. Per il Pico usa Chrome o Edge su computer.</p>
-  </section>
-  <pre id="log" role="log" aria-label="Risultati della prova e messaggi" hidden></pre>
-
   <div class="toolbar" id="game-toolbar">
     <label>Gioco:
       <select id="lab-game" aria-label="Gioco">
@@ -66,10 +52,7 @@
 
   <!-- ── LIVELLO BLOCCHI ────────────────────────────────────── -->
   <section id="level-blocchi" class="level" hidden>
-    <p class="intro">Costruisci la tua strategia incastrando i blocchi: si leggono dall'alto
-      in basso, e il primo «gioca…» che scatta decide la mossa. Se nessuna regola scatta, il
-      bot gioca a caso (e non fa mai mosse invalide — in Othello il motore ti passa solo
-      mosse legali). Poi provalo contro la CPU o caricalo sul Pico!</p>
+    <p class="intro">Incastra le istruzioni dall’alto verso il basso, poi premi «Prova il bot».</p>
     <div id="blockly-div"></div>
     <details id="generated-details">
       <summary>Guarda il codice MicroPython generato</summary>
@@ -79,11 +62,7 @@
 
   <!-- ── LIVELLO PYTHON ─────────────────────────────────────── -->
   <section id="level-python" class="level" hidden>
-    <p class="intro">MicroPython vero, con un template funzionante per ogni gioco. Il codice
-      viene salvato come <code>bot_&lt;gioco&gt;.py</code> sul Pico, insieme a un
-      <code>main.py</code> «router» che smista i messaggi al bot giusto: sullo stesso Pico
-      convivono i bot di tutti i giochi (uno per gioco, l'upload sostituisce solo quello).
-      Il lavoro di ogni gioco resta salvato in questo browser. Per uscire dal campo con la tastiera usa Maiusc + Tab.</p>
+    <p class="intro">Parti da un esempio e modifica il codice. Per uscire dall’editor usa Maiusc + Tab.</p>
     <div class="toolbar">
       <select id="template-select" aria-label="Template">
         <option value="tictactoe" selected>Template: Tris (bot casuale)</option>
@@ -103,24 +82,23 @@
 
   <!-- ── LIVELLO CARTE ──────────────────────────────────────── -->
   <section id="level-carte" class="level">
-    <p class="intro">Il bot legge le carte <strong>dall’alto verso il basso</strong>.
-      La prima che può usare decide la mossa. Aggiungi una carta e usa le frecce per spostarla: <strong>l’ordine conta!</strong></p>
+    <p class="intro">Il bot legge dall’alto. <strong>La prima carta che può usare decide la mossa.</strong></p>
     <div class="cards-wrap">
       <div class="cards-col">
-        <h3>1. Scegli le carte <small>Premi una carta per aggiungerla</small></h3>
-        <div id="cards-available"></div>
-      </div>
-      <div class="cards-col">
-        <h3>2. Metti in ordine le idee <small>La prima carta si legge per prima</small></h3>
+        <h3>Le tue istruzioni <small>Usa le frecce per cambiarne l’ordine.</small></h3>
         <ol id="cards-deck"></ol>
       </div>
+      <details class="cards-col" id="add-cards">
+        <summary>Aggiungi una carta</summary>
+        <p>Premi una carta per metterla in fondo alle tue istruzioni.</p>
+        <div id="cards-available"></div>
+      </details>
     </div>
     <div class="cards-actions">
       <button id="cards-to-blocks" class="btn">🧩 Trasforma il mazzo in blocchi</button>
-      <small>Le stesse regole, come puzzle: il tuo primo passo verso il livello Blocchi.</small>
     </div>
     <details class="cards-code">
-      <summary>Curiosità: guarda il codice delle tue carte</summary>
+      <summary>Guarda il codice delle carte</summary>
       <h3>Codice MicroPython
         <small>(modificalo a piacere — attenzione: se cambi le carte viene riscritto)</small>
       </h3>
@@ -129,7 +107,22 @@
   </section>
 
 
+  <p id="save-status" role="status">Le modifiche restano in questo browser.</p>
+  <pre id="log" role="log" aria-label="Risultati della prova e messaggi" hidden></pre>
   <div id="test-frame"></div>
+  <section class="hardware-panel" id="pico" aria-labelledby="pico-heading">
+    <h2 id="pico-heading">Carica sul Pico</h2>
+    <p>Collega la scheda con il cavo USB, poi premi «Connetti» e «Carica sul Pico».</p>
+    <div class="hardware-actions">
+      <button id="connect-button" class="btn connect">🔌 Connetti RP2040</button>
+      <span class="conn-status" id="conn-status">non connesso</span>
+      <button id="upload-button" class="btn" disabled>Carica sul Pico</button>
+    </div>
+    <div class="pico-links"><a href="../torneo/">Sfida con due Pico →</a><a href="../remote/">Sfida a distanza →</a></div>
+    <p id="serial-help" hidden>Questo browser non supporta il collegamento USB. Per il Pico usa Chrome o Edge su computer.</p>
+  </section>
+
+
   </main>
 
   <script src="../picoserial.js"></script>

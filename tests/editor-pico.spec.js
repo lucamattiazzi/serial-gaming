@@ -23,6 +23,8 @@ test('il Pico è visibile senza aprire un pannello e riceve il bot corrente', as
   await expect(page.locator('#connect-button')).toBeVisible()
   await page.locator('[data-editor-for="code"] .cm-content').fill('def rispondi(state):\n    return {"move": 2}')
   await page.locator('#bot-name').fill('Fulmine')
+  await page.getByRole('link', { name: 'Carica sul Pico', exact: true }).click()
+  await expect(page.locator('#level-python')).toBeVisible()
   await page.locator('#connect-button').click()
   await page.locator('#upload-button').click()
   const files = await page.evaluate(() => window.uploadedFiles)

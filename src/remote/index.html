@@ -10,26 +10,27 @@
 <body class="remote-page">
   <header class="topbar"><a class="brand" href="../">Serial Gaming</a><nav><a href="../editor/">Laboratorio</a><a href="../torneo/">Due Pico sullo stesso PC</a></nav></header>
   <main>
-    <span class="remote-eyebrow">DUE BOT. UNA STANZA. UNA SFIDA.</span>
-    <h1>Il tuo bot, contro il suo.<br><span>Anche a distanza.</span></h1>
-    <p class="intro">Prima sfida online: <strong>Tris</strong>. Il tuo bot può giocare dal Pico oppure direttamente dal browser. Anche se il tuo avversario sceglie un modo diverso!</p>
+    <h1>Sfida un altro bot.</h1>
+    <p class="intro">Giocate a <strong>Tris</strong>, ognuno dal proprio computer.</p>
     <div class="remote-setup">
       <section class="remote-card">
         <h2>1. Prepara il tuo bot</h2>
         <label for="bot-engine">Dove gira il tuo bot?</label>
         <select id="bot-engine"><option value="pico">Sul Pico USB</option><option value="browser">Python nel browser</option></select>
         <div id="pico-panel">
-        <p>Usa Chrome o Edge su computer. Il codice continua a girare sulla tua scheda.</p>
         <p>Carica prima un bot del Tris dal <a href="../editor/?game=tictactoe#python">Laboratorio</a>.</p>
         <button id="connect-pico" class="btn connect">Connetti RP2040</button>
         <p id="pico-status" role="status">Nessuna scheda connessa.</p>
         <button id="disconnect-pico" class="btn small" disabled>Scollega</button>
         </div>
         <div id="browser-panel" hidden>
-          <p>Scrivi la strategia o usa il codice del <a href="../editor/?game=tictactoe#python">Laboratorio</a> salvato su questo browser. Non serve una scheda.</p>
+          <p>Puoi avviare il bot di esempio o usare il tuo codice del Laboratorio.</p>
           <div class="browser-imports"><button id="load-python" class="btn small">Usa il mio Python</button><button id="load-cards" class="btn small">Usa le mie carte</button></div>
+          <details id="browser-code-details">
+            <summary>Guarda o modifica il codice</summary>
           <div id="browser-editor"><textarea id="browser-code" aria-label="Codice Python del bot online" spellcheck="false"></textarea></div>
           <p class="code-hint">Il bot è sempre <strong>O</strong>. <code>rispondi(stato)</code> restituisce <code>{"move": casella}</code>, con caselle da 0 a 8.</p>
+          </details>
           <button id="start-browser" class="btn primary">Avvia bot Python</button>
           <button id="stop-browser" class="btn" disabled>Ferma bot</button>
           <p id="browser-status" role="status">Il codice resta su questo computer. Avvia il bot per giocare.</p>
@@ -57,7 +58,8 @@
       <div id="remote-board" role="group" aria-label="Tabellone del Tris"></div>
       <p id="turn-time"></p>
     </section>
-    <p class="remote-note">L’arbitro sul server controlla le mosse. Ogni turno ha 5 secondi, rete inclusa. Le stanze durano 30 minuti e si chiudono se un partecipante esce. Per gli altri giochi potete usare due Pico sullo stesso computer.</p>
+    <p class="remote-note">Tenete aperta questa pagina durante la sfida.</p>
+    <details class="remote-rules"><summary>Come funziona la sfida?</summary><p>L’arbitro sul server controlla le mosse. Ogni turno ha 5 secondi, rete inclusa. Le stanze durano 30 minuti e si chiudono se un partecipante esce. Per gli altri giochi potete usare due Pico sullo stesso computer. Per collegare il Pico usa Chrome o Edge su computer.</p></details>
   </main>
   <script src="../picoserial.js"></script>
   <script type="module" src="script.js"></script>

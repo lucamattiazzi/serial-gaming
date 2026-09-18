@@ -32,3 +32,16 @@
   .remote-page .topbar nav { flex-wrap: wrap; }
   .remote-card { padding: 20px; }
 }
+
+.remote-page { max-width: 940px; }
+.remote-page main { padding-top: 24px; }
+.remote-page h1 { font-size: clamp(28px, 4vw, 36px); margin: 8px 0 12px; }
+.remote-setup { gap: 20px; margin-block: 24px; }
+.remote-card { padding: 20px; border-radius: 12px; }
+.remote-card h2 { font-size: 20px; }
+#browser-code-details { margin: 12px 0; }
+#browser-code-details summary, .remote-rules summary { cursor: pointer; padding: 10px 0; }
+.remote-rules { font-size: 14px; color: var(--text-dim); }
+.remote-note { border: 0; margin-top: 24px; padding: 0; }
+.remote-page .btn { border-radius: 10px; box-shadow: none; }
+.remote-page .btn.connect { background: var(--bg-card); color: var(--text); border: 1px solid var(--border); box-shadow: none; }

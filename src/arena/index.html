@@ -18,10 +18,7 @@
   </header>
 
   <section class="arena-intro" aria-label="Benvenuto nell’Arena">
-    <span class="arena-kicker">12 CREATURE · LA TUA SQUADRA DI 3</span>
-    <h2>La forza conta.<br><span>La strategia ancora di più.</span></h2>
-    <p>Scegli i tuoi compagni, scopri i tipi e insegna al bot quando attaccare, cambiare o curarsi.</p>
-    <a class="btn small" href="../editor/?game=arena#carte">Crea la strategia con le carte →</a>
+    <p>Scegli 3 mostri e guida la tua squadra alla vittoria.</p>
     <details class="arena-guide">
       <summary>Le regole in un minuto</summary>
       <p>Scegli 3 mostri diversi: il primo entra in campo. Ogni turno scegli un’azione; poi si risolvono le scelte di entrambi. Se giocate in due sullo stesso PC, passatevi i comandi.</p>
@@ -43,11 +40,11 @@
     <div class="player-card" id="card-P1">
       <h2><span class="side-badge">G1</span> Allenatore 1</h2>
       <select id="type-P1" aria-label="Tipo allenatore 1">
-        <option value="human" selected>Umano</option>
-        <option value="pico">RP2040 (seriale)</option>
+        <option value="human" selected>Una persona</option>
+        <option value="pico">Bot sul Pico</option>
         <option value="emu">RP2040 emulato (Python nel browser)</option>
-        <option value="cpu-random">CPU casuale</option>
-        <option value="cpu-smart">CPU allenatore</option>
+        <option value="cpu-random">Computer facile</option>
+        <option value="cpu-smart">Computer esperto</option>
       </select>
       <div class="conn-row" id="conn-row-P1" hidden>
         <button id="connect-P1" class="btn connect">🔌 Connetti RP2040</button>
@@ -67,11 +64,11 @@
     <div class="player-card" id="card-P2">
       <h2><span class="side-badge">G2</span> Allenatore 2</h2>
       <select id="type-P2" aria-label="Tipo allenatore 2">
-        <option value="human">Umano</option>
-        <option value="pico">RP2040 (seriale)</option>
+        <option value="human">Una persona</option>
+        <option value="pico">Bot sul Pico</option>
         <option value="emu">RP2040 emulato (Python nel browser)</option>
-        <option value="cpu-random" selected>CPU casuale</option>
-        <option value="cpu-smart">CPU allenatore</option>
+        <option value="cpu-random" selected>Computer facile</option>
+        <option value="cpu-smart">Computer esperto</option>
       </select>
       <div class="conn-row" id="conn-row-P2" hidden>
         <button id="connect-P2" class="btn connect">🔌 Connetti RP2040</button>
@@ -102,6 +99,8 @@
     <div id="timer-fill"></div>
     <span id="timer-text"></span>
   </div>
+
+  <p id="status-display" role="status">Premi «Inizia la sfida» per scegliere la squadra.</p>
 
   <!-- draft dell'umano -->
   <div id="draft-panel" hidden>
@@ -147,9 +146,13 @@
     <div id="switch-buttons"></div>
   </div>
 
-  <pre id="battle-log" hidden></pre>
+  <details id="battle-history" hidden>
+    <summary>Cosa è successo?</summary>
+    <pre id="battle-log" hidden></pre>
+  </details>
+  <p class="arena-lab-link"><a href="../editor/?game=arena#carte">Crea un bot per l’Arena →</a></p>
 
-  <p id="status-display">Scegli gli allenatori e inizia. Draft di 3 mostri, poi battaglia a scelte simultanee.</p>
+
 
   <script src="../picoserial.js"></script>
   <script src="../bot-templates.js"></script>

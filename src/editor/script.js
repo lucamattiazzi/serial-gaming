@@ -91,6 +91,11 @@ function showLevel() {
 }
 
 window.addEventListener('hashchange', showLevel)
+document.querySelector('.pico-shortcut').addEventListener('click', event => {
+  event.preventDefault()
+  document.getElementById('pico').scrollIntoView({ block: 'start' })
+  document.getElementById('connect-button').focus({ preventScroll: true })
+})
 
 // ── Livello Blocchi ──────────────────────────────────────────
 let workspace = null

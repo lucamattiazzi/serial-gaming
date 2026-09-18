@@ -1,0 +1,39 @@
+import { test, expect } from '@playwright/test'
+
+test('la home mostra subito i giochi e un solo invito principale', async ({ page }) => {
+  await page.goto('/')
+  await expect(page.getByRole('heading', { name: 'Scegli un gioco.' })).toBeVisible()
+  await expect(page.locator('.activity-card')).toHaveCount(6)
+  await expect(page.locator('.welcome .primary')).toHaveCount(1)
+  await expect(page.locator('.hero-sketch, .learning-path, .game-filters')).toHaveCount(0)
+})
+
+test('le carte aggiuntive si aprono quando servono e il Pico resta raggiungibile', async ({ page }) => {
+  await page.goto('/editor/?game=tictactoe#carte')
+  await expect(page.locator('#cards-deck')).toBeVisible()
+  await expect(page.locator('#cards-available')).toBeHidden()
+  await page.getByText('Aggiungi una carta', { exact: true }).click()
+  await expect(page.locator('#cards-available')).toBeVisible()
+  const count = await page.locator('#cards-deck > li').count()
+  await page.locator('#cards-available button').first().click()
+  await expect(page.locator('#cards-deck > li')).toHaveCount(count + 1)
+  await page.getByRole('link', { name: 'Carica sul Pico' }).click()
+  await expect(page.locator('#connect-button')).toBeInViewport()
+})
+
+test('l’Arena mostra solo ciò che serve nella fase corrente', async ({ page }) => {
+  await page.goto('/arena/')
+  await expect(page.locator('#arena')).toBeHidden()
+  await page.locator('#start-button').click()
+  await expect(page.locator('#setup')).toBeHidden()
+  await expect(page.locator('#draft-panel')).toBeVisible()
+  await expect(page.locator('#arena')).toBeHidden()
+  for (const name of ['Bracino', 'Ondina', 'Fogliolino']) await page.getByRole('button', { name: new RegExp(name) }).click()
+  await page.locator('#draft-confirm').click()
+  await expect(page.locator('#arena')).toBeVisible()
+  await expect(page.locator('#command-panel')).toBeVisible()
+  await expect(page.locator('#draft-panel')).toBeHidden()
+  await expect(page.locator('#battle-log')).toBeHidden()
+  await page.getByText('Cosa è successo?', { exact: true }).click()
+  await expect(page.locator('#battle-log')).toBeVisible()
+})
