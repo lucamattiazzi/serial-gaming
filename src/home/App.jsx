@@ -71,6 +71,6 @@ export default function App() {
       <nav aria-label="Navigazione principale"><a href="#giochi" aria-current={view === 'giochi' ? 'page' : undefined}>Giochi</a><a href="editor/">Laboratorio</a><a href="remote/">Sfida online</a><a href="#spiegazione" aria-current={view === 'spiegazione' ? 'page' : undefined}>Come funziona</a></nav>
     </header>
     <main id="contenuto" tabIndex="-1">{view === 'giochi' ? <GamesView /> : <SpiegazioneView />}</main>
-    <footer className="site-footer"><a href="lezioni/">Guida per docenti</a>{!SITE_CONFIG.hiddenGames.includes('torneo') && <a href="torneo/">Torneo con i Pico</a>}</footer>
+    <footer className="site-footer"><a href="lezioni/">Guida per docenti</a>{!SITE_CONFIG.hiddenGames.includes('torneo') && <a href="torneo/">Torneo con i Pico</a>}<span className="site-credit">Un progetto di <a href="https://grokked.it">grokked.it</a></span></footer>
   </div>
 }

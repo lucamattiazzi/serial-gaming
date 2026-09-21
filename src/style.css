@@ -1,12 +1,13 @@
 /* ── Design tokens condivisi ─────────────────────────────── */
 :root {
   color-scheme: dark;
-  --bg: #101620;
-  --bg-soft: #171f2c;
-  --bg-card: #1b2533;
-  --border: #344255;
-  --text: #e5edf5;
-  --text-dim: #abbacc;
+  --bg: #16181d;
+  --bg-soft: #1b1e24;
+  --bg-card: #202329;
+  --border: #3b414c;
+  --text: #e5e7eb;
+  --text-dim: #b1b8c4;
+  --link: #7ab8ff;
   --accent: #80d5b6;
   --accent-soft: #203c35;
   --accent-2: #f2b181;
@@ -38,7 +39,7 @@ body {
 }
 
 a {
-  color: var(--accent);
+  color: var(--link);
   text-decoration: none;
 }
 

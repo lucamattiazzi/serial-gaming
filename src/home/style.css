@@ -8,7 +8,7 @@
 .brand-dot { color: var(--accent); }
 .site-header nav { display: flex; flex-wrap: wrap; gap: 20px; }
 .site-header nav a { display: inline-flex; align-items: center; min-height: 44px; color: var(--text-dim); font-size: 15px; }
-.site-header nav a[aria-current] { color: var(--accent); }
+.site-header nav a[aria-current] { color: var(--link); text-decoration: underline; text-underline-offset: 6px; }
 .welcome { padding: 36px 0 32px; }
 .welcome h1 { font-size: clamp(30px, 4vw, 40px); line-height: 1.2; margin: 0 0 10px; letter-spacing: -1px; }
 .welcome p { margin: 0 0 20px; color: var(--text-dim); }
@@ -21,8 +21,10 @@
 .activity-links { display: flex; gap: 20px; flex-wrap: wrap; }
 .activity-links a { display: inline-flex; align-items: center; min-height: 44px; font-size: 15px; font-weight: 650; }
 .activity-links a + a { color: var(--text-dim); }
-.site-footer { display: flex; flex-wrap: wrap; gap: 28px; margin-top: 36px; padding: 18px 0; border-top: 1px solid var(--border); }
-.site-footer a { padding: 8px 0; color: var(--text-dim); font-size: 14px; }
+.site-footer { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 28px; margin-top: 36px; padding: 18px 0; border-top: 1px solid var(--border); }
+.site-footer a { display: inline-flex; align-items: center; min-height: 44px; padding: 8px 0; color: var(--text-dim); font-size: 14px; }
+.site-credit { margin-left: auto; color: var(--text-dim); font-size: 14px; }
+.site-credit a { color: var(--link); }
 .explanation { max-width: 700px; padding: 32px 0; margin: auto; }
 .explanation .eyebrow { display: none; }
 .explanation h1 { font-size: clamp(28px, 4vw, 36px); line-height: 1.25; }
@@ -47,4 +49,5 @@
   .game-symbol { float: right; margin-left: 12px; }
   .activity-card h2 { margin-top: 0; }
   .activity-card p { min-height: 0; }
+  .site-credit { flex-basis: 100%; margin-left: 0; }
 }
