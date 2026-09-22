@@ -28,7 +28,12 @@ un computer ogni coppia, 45–60 minuti, nessun Pico necessario. Fare una
 previsione, cambiare una sola regola, osservare il risultato e raccontarlo.
 La guida in `/lezioni/` include una scaletta breve e un percorso più lungo.
 
-La home propone giochi per cominciare e sfide successive. Nel laboratorio,
+La home propone giochi illustrati per cominciare e sfide successive. Il
+laboratorio affianca tavolozza delle carte, istruzioni ordinate e partita di
+prova. Il pulsante verde avvia il bot e le carte si illuminano quando decidono
+una mossa; il risultato resta accanto al tabellone. Su schermi piccoli i pannelli
+si impilano e «Vai alla prova» porta direttamente al pulsante di avvio.
+Nel laboratorio,
 `?game=tictactoe#carte` apre direttamente il gioco e il livello desiderati.
 Carte, codice Python e blocchi vengono salvati per gioco nel browser locale.
 Su computer condivisi la coppia successiva ritrova lo stesso lavoro; il
@@ -86,7 +91,9 @@ Per gli altri giochi resta disponibile la sfida con due schede sullo stesso PC.
 
 Il laboratorio usa CodeMirror con evidenziazione Python, numeri di riga e
 modifica del codice. Il codice visualizzato è quello salvato e caricato sul Pico.
-Il tema scuro è condiviso da sito, giochi e laboratorio.
+Il tema chiaro o scuro segue le preferenze del sistema su sito, giochi,
+laboratorio, blocchi e editor Python. Il collegamento Pico si apre da
+«Carica sul Pico» oppure da «Hai una scheda? Collega un Pico».
 
 ## Arena dei Mostri: più strategie
 
@@ -120,6 +127,7 @@ npm run test:classroom
 npm run test:server
 npx playwright test tests/editor-pico.spec.js tests/remote.spec.js tests/browser-bot.spec.js
 npx playwright test tests/arena.spec.js
+npx playwright test tests/studio.spec.js tests/simple-design.spec.js
 ```
 
 La suite verifica navigazione, controlli nascosti, avvio senza hardware,

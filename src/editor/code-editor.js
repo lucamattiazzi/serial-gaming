@@ -1,5 +1,5 @@
 import { EditorView, basicSetup } from 'codemirror'
-import { EditorState } from '@codemirror/state'
+import { Compartment, EditorState } from '@codemirror/state'
 import { python } from '@codemirror/lang-python'
 import { oneDark } from '@codemirror/theme-one-dark'
 
@@ -8,6 +8,8 @@ for (const source of document.querySelectorAll('#code, #generated-carte, #genera
   const editable = source instanceof HTMLTextAreaElement
   const read = () => editable ? source.value : source.textContent
   const container = document.createElement('div')
+  const colorScheme = window.matchMedia('(prefers-color-scheme: dark)')
+  const theme = new Compartment()
   container.dataset.editorFor = source.id
   source.after(container)
   const view = new EditorView({
@@ -16,7 +18,7 @@ for (const source of document.querySelectorAll('#code, #generated-carte, #genera
     extensions: [
       basicSetup,
       python(),
-      oneDark,
+      theme.of(colorScheme.matches ? oneDark : []),
       EditorState.readOnly.of(!editable),
       EditorView.editable.of(editable),
       EditorView.contentAttributes.of({ 'aria-label': source.getAttribute('aria-label') || 'Codice Python generato' }),
@@ -34,6 +36,9 @@ for (const source of document.querySelectorAll('#code, #generated-carte, #genera
     ],
   })
   source.hidden = true
+  colorScheme.addEventListener('change', () => {
+    view.dispatch({ effects: theme.reconfigure(colorScheme.matches ? oneDark : []) })
+  })
   source.addEventListener('codechange', () => {
     const value = read()
     if (value !== view.state.doc.toString()) {

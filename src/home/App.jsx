@@ -1,38 +1,45 @@
 import { useEffect, useState } from 'react'
 import { GAMES } from './games.js'
 import { SITE_CONFIG } from './siteConfig.js'
+import GameArtwork, { BotDrawing } from './GameArtwork.jsx'
 import './style.css'
 
 const readView = () => location.hash === '#spiegazione' ? 'spiegazione' : 'giochi'
-
-function BotDrawing() {
-  return <svg viewBox="0 0 100 100" fill="none" aria-hidden="true">
-    <path d="M50 24V13m-25 40H15v20h10m50-20h10v20H75" stroke="currentColor" strokeWidth="5" strokeLinecap="round" />
-    <circle cx="50" cy="11" r="6" fill="#e9b949" stroke="currentColor" strokeWidth="3" />
-    <rect x="24" y="28" width="52" height="55" rx="17" fill="var(--accent-soft)" stroke="currentColor" strokeWidth="4" />
-    <rect x="33" y="42" width="34" height="22" rx="8" fill="currentColor" />
-    <path d="M42 50v6m16-6v6" stroke="var(--bg)" strokeWidth="4" strokeLinecap="round" />
-    <path d="M44 73h12" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
-  </svg>
-}
 
 function GamesView() {
   const games = GAMES.filter(g => !SITE_CONFIG.hiddenGames.includes(g.id) && g.id !== 'torneo')
   return <>
     <section className="welcome" aria-labelledby="welcome-title">
-      <h1 id="welcome-title">Scegli un gioco.</h1>
-      <p>Gioca tu, poi insegna a un bot come fare.</p>
-      <a className="btn primary" href="editor/?game=tictactoe#carte">Crea il tuo primo bot</a>
+      <div className="welcome-copy">
+        <span className="eyebrow">IL LABORATORIO DELLE TUE IDEE</span>
+        <h1 id="welcome-title">Si gioca.<br />E il bot lo inventi <em>tu!</em></h1>
+        <p>Scegli un gioco, unisci le istruzioni e guarda il tuo bot in azione. Ogni tentativo è una nuova idea.</p>
+        <a className="btn primary" href="editor/?game=tictactoe#carte"><span aria-hidden="true">＋</span> Crea il tuo primo bot</a>
+        <span className="welcome-note">Si comincia dal Tris. Basta la tua curiosità.</span>
+      </div>
+      <div className="welcome-art" aria-hidden="true">
+        <span className="bot-speech">Mi insegni a giocare?</span>
+        <div className="hero-bot"><BotDrawing /></div>
+        <div className="idea-blocks"><span>⚑ Quando tocca a me</span><span>Se posso vincere…</span><span>faccio la mia mossa!</span></div>
+        <span className="art-spark spark-one">✦</span><span className="art-spark spark-two">✧</span>
+      </div>
     </section>
+    <ol className="discovery-path" aria-label="Il tuo percorso">
+      <li><span className="step-number">1</span><span><strong>Gioca</strong><small>Scopri le regole</small></span></li>
+      <li><span className="step-number">2</span><span><strong>Costruisci</strong><small>Insegna al tuo bot</small></span></li>
+      <li><span className="step-number">3</span><span><strong>Prova e riprova</strong><small>Le idee crescono così!</small></span></li>
+    </ol>
     <section className="game-library" aria-label="Giochi">
+      <div className="library-heading"><div><h2>Scegli un gioco.</h2><p>Puoi giocare tu o inventare un bot che gioca per te.</p></div><span className="library-count">{games.length} giochi da esplorare</span></div>
       <div className="game-grid">
-        {games.map(g => <article className="activity-card" key={g.id}>
-          <span className="game-symbol" aria-hidden="true">{g.icon}</span>
-          <h2>{g.title}</h2>
-          <p>{g.blurb}</p>
-          <div className="activity-links">
-            <a href={g.href} aria-label={`Gioca a ${g.title}`}>Gioca</a>
-            <a href={`editor/?game=${g.id}#carte`} aria-label={`Crea un bot per ${g.title}`}>Crea un bot</a>
+        {games.map(g => <article className={`activity-card game-${g.id}`} key={g.id}>
+          <div className="game-art"><GameArtwork game={g} /><span className="game-level">{g.id === 'tictactoe' ? '★ Parti da qui' : g.level === 'inizio' ? 'Per cominciare' : 'Una sfida in più'}</span></div>
+          <div className="activity-content"><h3>{g.title}</h3>
+            <p>{g.blurb}</p>
+            <div className="activity-links">
+              <a href={g.href} aria-label={`Gioca a ${g.title}`}><span aria-hidden="true">▶</span> Gioca</a>
+              <a href={`editor/?game=${g.id}#carte`} aria-label={`Crea un bot per ${g.title}`}>Crea un bot <span aria-hidden="true">→</span></a>
+            </div>
           </div>
         </article>)}
       </div>

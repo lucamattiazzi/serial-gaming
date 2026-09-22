@@ -41,6 +41,10 @@ const generatedCarte = document.getElementById('generated-carte')
 const cardsAvailable = document.getElementById('cards-available')
 const cardsDeck = document.getElementById('cards-deck')
 const testFrame = document.getElementById('test-frame')
+const stagePanel = document.getElementById('stage-panel')
+const stageStatus = document.getElementById('stage-status')
+const stagePlaceholder = document.getElementById('stage-placeholder')
+const colorScheme = window.matchMedia('(prefers-color-scheme: dark)')
 
 function readDraft(kind, gameId) {
   try {
@@ -88,12 +92,20 @@ function showLevel() {
   }
   gameToolbar.hidden = level === 'python'
   if (workspace) Blockly.svgResize(workspace)
+  syncStage()
 }
 
 window.addEventListener('hashchange', showLevel)
+document.querySelector('.preview-shortcut').addEventListener('click', event => {
+  event.preventDefault()
+  stagePanel.scrollIntoView({ block: 'start' })
+  tryButton.focus({ preventScroll: true })
+})
 document.querySelector('.pico-shortcut').addEventListener('click', event => {
   event.preventDefault()
-  document.getElementById('pico').scrollIntoView({ block: 'start' })
+  const panel = document.getElementById('pico')
+  panel.open = true
+  panel.scrollIntoView({ block: 'start' })
   document.getElementById('connect-button').focus({ preventScroll: true })
 })
 
@@ -121,34 +133,41 @@ function workspaceXml() {
   return Blockly.Xml.domToText(dom)
 }
 
-function injectWorkspace() {
-  if (!blocklyReady) return
-  if (workspace) {
-    workspace.dispose()
-  }
-  const theme = Blockly.Theme.defineTheme(`serialgaming-${currentGameId}`, {
+function blocklyTheme() {
+  const styles = getComputedStyle(document.documentElement)
+  const token = name => styles.getPropertyValue(name).trim()
+  return Blockly.Theme.defineTheme(`serialgaming-${colorScheme.matches ? 'dark' : 'light'}`, {
     base: Blockly.Themes.Zelos || Blockly.Themes.Classic,
     componentStyles: {
-      workspaceBackgroundColour: '#171d29',
-      toolboxBackgroundColour: '#202a38',
-      toolboxForegroundColour: '#e5edf5',
-      flyoutBackgroundColour: '#202a38',
-      flyoutForegroundColour: '#e5edf5',
+      workspaceBackgroundColour: token('--bg-card'),
+      toolboxBackgroundColour: token('--bg-soft'),
+      toolboxForegroundColour: token('--text'),
+      flyoutBackgroundColour: token('--bg-soft'),
+      flyoutForegroundColour: token('--text'),
       flyoutOpacity: 0.97,
-      scrollbarColour: '#3a4157',
-      insertionMarkerColour: '#4fd1c5',
+      scrollbarColour: token('--border'),
+      insertionMarkerColour: token('--accent'),
       insertionMarkerOpacity: 0.5,
-      markerColour: '#4fd1c5',
-      cursorColour: '#4fd1c5',
+      markerColour: token('--accent'),
+      cursorColour: token('--accent'),
     },
     fontStyle: { size: 14 },
   })
+}
+
+colorScheme.addEventListener('change', () => {
+  if (workspace) workspace.setTheme(blocklyTheme())
+})
+
+function injectWorkspace() {
+  if (!blocklyReady) return
+  if (workspace) workspace.dispose()
   workspace = Blockly.inject('blockly-div', {
     toolbox: labGame().toolbox,
     renderer: 'zelos',
-    theme,
+    theme: blocklyTheme(),
     zoom: { controls: true, startScale: 1 },
-    grid: { spacing: 24, length: 2, colour: '#344358', snap: false },
+    grid: { spacing: 24, length: 2, colour: '#a4abc0', snap: false },
     trashcan: true,
   })
   const textToDom = (Blockly.utils.xml && Blockly.utils.xml.textToDom) || Blockly.Xml.textToDom
@@ -188,6 +207,7 @@ gameSelect.addEventListener('change', () => {
   history.replaceState(null, '', url)
   injectWorkspace()
   renderCards()
+  syncStage()
 })
 
 // ── Livello Python ───────────────────────────────────────────
@@ -202,6 +222,7 @@ generatedCarte.addEventListener('input', () => saveDraft('cards-code', currentGa
 
 templateSelect.addEventListener('change', () => {
   restorePython()
+  syncStage()
 })
 
 // Tab nelle textarea di codice inserisce 4 spazi invece di cambiare campo
@@ -263,10 +284,16 @@ function renderCards(resetCode = false) {
 
   cardsAvailable.innerHTML = ''
   for (const [key, card] of Object.entries(cards)) {
-    if (deck.includes(key)) continue
     const button = document.createElement('button')
     button.className = 'card'
+    button.dataset.color = Object.keys(cards).indexOf(key) % 5
+    button.disabled = deck.includes(key)
     button.innerHTML = `<strong>${card.label}</strong><span>${card.hint}</span>`
+    if (button.disabled) {
+      const used = document.createElement('small')
+      used.textContent = 'Nel tuo bot'
+      button.appendChild(used)
+    }
     button.addEventListener('click', () => {
       deck.push(key)
       renderCards(true)
@@ -274,14 +301,11 @@ function renderCards(resetCode = false) {
     })
     cardsAvailable.appendChild(button)
   }
-  if (cardsAvailable.children.length === 0) {
-    cardsAvailable.innerHTML = '<p class="cards-empty">Tutte le carte sono nel tuo bot!</p>'
-  }
-
   cardsDeck.innerHTML = ''
   deck.forEach((key, index) => {
     const item = document.createElement('li')
     item.className = 'card in-deck'
+    item.dataset.color = Object.keys(cards).indexOf(key) % 5
     item.innerHTML = `<strong>${cards[key].label}</strong><span>${cards[key].hint}</span>`
     const controls = document.createElement('div')
     controls.className = 'card-controls'
@@ -299,7 +323,7 @@ function renderCards(resetCode = false) {
         action()
         renderCards(true)
         const next = cardsDeck.children[Math.min(nextIndex, deck.length - 1)]
-        const focusTarget = next?.querySelector('button:not(:disabled)') || cardsAvailable.querySelector('button')
+        const focusTarget = next?.querySelector('button:not(:disabled)') || cardsAvailable.querySelector('button:not(:disabled)')
         focusTarget?.focus()
       })
       controls.appendChild(button)
@@ -388,6 +412,7 @@ function currentBot() {
 // ── Log ──────────────────────────────────────────────────────
 function log(message) {
   logEl.hidden = false
+  if (!testing) logEl.closest('details').open = true
   logEl.textContent += message + '\n'
   logEl.scrollTop = logEl.scrollHeight
 }
@@ -395,17 +420,47 @@ function log(message) {
 // ── Prova contro la CPU (emulatore + partita nell'iframe) ────
 let testing = false
 
+function syncStage() {
+  if (testing) return
+  const { gameId } = currentBot()
+  if (stagePanel.dataset.game !== gameId) {
+    testFrame.replaceChildren()
+    stagePlaceholder.hidden = false
+    stagePlaceholder.querySelector('h3').textContent = 'Pronto a giocare!'
+    stagePanel.dataset.state = 'ready'
+    stageStatus.textContent = 'La prima prova può richiedere un momento. Serve internet.'
+  }
+  stagePanel.dataset.game = gameId
+  document.getElementById('stage-game').textContent = LAB_GAMES[gameId]?.name || gameId
+  document.getElementById('play-yourself').href = GAME_PATH[gameId]
+}
+
+function testStatus(state, message) {
+  stagePanel.dataset.state = state
+  stageStatus.textContent = message
+  stagePanel.setAttribute('aria-busy', state === 'loading' ? 'true' : 'false')
+  if (state === 'loading') stagePlaceholder.querySelector('h3').textContent = 'Il bot si prepara…'
+  if (state === 'error') stagePlaceholder.querySelector('h3').textContent = 'Ci riproviamo?'
+}
+
 tryButton.addEventListener('click', async () => {
   if (testing) return
   const { code, gameId } = currentBot()
   if (!code) {
     log('Niente da provare: costruisci prima il bot.')
+    testStatus('error', 'Aggiungi le istruzioni prima di provare il bot.')
     return
   }
   // eventuali giochi senza pagina pilotabile si provano su forza4
   const testGameId = GAME_PATH[gameId] ? gameId : 'forza4'
+  syncStage()
   testing = true
   tryButton.disabled = true
+  gameSelect.disabled = true
+  templateSelect.disabled = true
+  testFrame.replaceChildren()
+  stagePlaceholder.hidden = false
+  testStatus('loading', 'Preparo il tuo bot… La prima volta ci vuole un momento.')
   logEl.textContent = ''
   log(`Preparo l'emulatore e avvio una partita di prova (${testGameId})…`)
 
@@ -420,8 +475,12 @@ tryButton.addEventListener('click', async () => {
   } catch (error) {
     emu?.disconnect()
     log(`Il bot non parte: ${error.message}`)
+    testStatus('error', 'Il bot non è partito. Apri «Cosa è successo?» per capire perché e riprova.')
+    logEl.closest('details').open = true
     testing = false
     tryButton.disabled = false
+    gameSelect.disabled = false
+    templateSelect.disabled = false
     return
   }
 
@@ -434,28 +493,43 @@ tryButton.addEventListener('click', async () => {
     if (typeof target.startExternalMatch !== 'function') {
       emu.disconnect()
       log('La pagina del gioco non è pilotabile.')
+      testStatus('error', 'Questa prova non è partita. Premi il pulsante verde per riprovare.')
       testing = false
       tryButton.disabled = false
+      gameSelect.disabled = false
+      templateSelect.disabled = false
       return
     }
     log('Si gioca! Il tuo bot ha il primo slot (sinistra / X / Giocatore 1).')
+    testStatus('playing', 'Si gioca! Guarda quale istruzione si accende a ogni mossa.')
     // ogni mossa arriva con la carta che l'ha decisa: la si accende nel
     // mazzo e la si annota nel log (l'avversario CPU non manda regole)
     target.__onBotRule = (id, rule) => {
       log(`🃏 ${rule}`)
       if (currentGameId === gameId) highlightDeckCard(rule)
+      stageStatus.textContent = `Il tuo bot ha scelto: ${rule}`
     }
     target.startExternalMatch([emu, TEST_CPU[testGameId]], winnerSlot => {
       if (winnerSlot === 'P1') log('🎉 Il tuo bot ha VINTO!')
       else if (winnerSlot === 'P2') log('Questa volta ha vinto il computer. Quale carta potresti cambiare?')
       else log('Pareggio.')
+      testStatus('done', winnerSlot === 'P1'
+        ? 'Il tuo bot ha vinto! Quale istruzione ha fatto la differenza?'
+        : winnerSlot === 'P2'
+          ? 'Questa volta vince il computer. Cambia una carta e riprova!'
+          : 'Pareggio! Prova a cambiare una carta: cosa succederà?')
       emu.disconnect()
       testing = false
       tryButton.disabled = false
+      gameSelect.disabled = false
+      templateSelect.disabled = false
     })
   })
   testFrame.appendChild(iframe)
-  iframe.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+  stagePlaceholder.hidden = true
+  if (window.matchMedia('(max-width: 1000px)').matches) {
+    stagePanel.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
 })
 
 // ── Connessione e upload sul Pico ────────────────────────────

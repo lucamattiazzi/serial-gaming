@@ -1,29 +1,60 @@
 /* ── Design tokens condivisi ─────────────────────────────── */
 :root {
-  color-scheme: dark;
-  --bg: #16181d;
-  --bg-soft: #1b1e24;
-  --bg-card: #202329;
-  --border: #3b414c;
-  --text: #e5e7eb;
-  --text-dim: #b1b8c4;
-  --link: #7ab8ff;
-  --accent: #80d5b6;
-  --accent-soft: #203c35;
-  --accent-2: #f2b181;
-  --x-color: #81bfff;
-  --o-color: #ffc078;
-  --danger: #ff8f8f;
+  color-scheme: light;
+  --bg: #f5f7fc;
+  --bg-soft: #edf0f8;
+  --bg-card: #ffffff;
+  --border: #d7dced;
+  --text: #293452;
+  --text-dim: #596580;
+  --link: #6244bd;
+  --accent: #7050c7;
+  --accent-soft: #eee8fc;
+  --accent-2: #f6b84e;
+  --x-color: #326cc7;
+  --o-color: #bd591c;
+  --danger: #ba354c;
+  --run: #25834b;
+  --run-hover: #1c6e3d;
+  --header: #6947b8;
+  --dot: #d8ddee;
+  --shadow: 0 4px 0 #e4e7f2;
   --radius: 14px;
   --font-mono: "SF Mono", "Fira Code", Menlo, Consolas, monospace;
   --font-fun: "Avenir Next", "Trebuchet MS", "Segoe UI", sans-serif;
   /* palette giocosa per le card dei giochi */
-  --c-blue: #81bfff;
-  --c-pink: #ef9cc7;
-  --c-amber: #ffc078;
-  --c-green: #a0d993;
-  --c-purple: #b9a3ef;
-  --c-teal: #80d5b6;
+  --c-blue: #326cc7;
+  --c-pink: #ae4284;
+  --c-amber: #a96314;
+  --c-green: #34834d;
+  --c-purple: #7853be;
+  --c-teal: #238087;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --bg: #191d2c;
+    --bg-soft: #242a3d;
+    --bg-card: #22283b;
+    --border: #424b65;
+    --text: #eef0fa;
+    --text-dim: #b8c2da;
+    --link: #c2adff;
+    --accent: #bda2ff;
+    --accent-soft: #383052;
+    --x-color: #8bbcff;
+    --o-color: #ffc078;
+    --danger: #ff9aaa;
+    --dot: #39415a;
+    --shadow: 0 4px 0 #111523;
+    --c-blue: #8bbcff;
+    --c-pink: #f2a4d5;
+    --c-amber: #ffd07d;
+    --c-green: #9cdda6;
+    --c-purple: #c2adff;
+    --c-teal: #85d7d1;
+  }
 }
 
 * {
@@ -32,7 +63,7 @@
 
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-family: var(--font-fun);
   background: var(--bg);
   color: var(--text);
   line-height: 1.6;
@@ -76,7 +107,7 @@ pre code {
 .btn {
   display: inline-block;
   padding: 0.6rem 1.4rem;
-  border-radius: 999px;
+  border-radius: 12px;
   border: 1px solid var(--border);
   background: var(--bg-card);
   color: var(--text);
@@ -105,13 +136,13 @@ pre code {
 .btn.primary {
   background: var(--accent);
   border-color: var(--accent);
-  color: #102d24;
-  box-shadow: 0 3px 0 #3e8b70;
+  color: var(--bg-card);
+  box-shadow: 0 3px 0 color-mix(in srgb, var(--accent) 70%, #000);
 }
 
 .btn.primary:hover:not(:disabled) {
-  background: #a3e8ce;
-  color: #102d24;
+  background: color-mix(in srgb, var(--accent) 88%, var(--text));
+  color: var(--bg-card);
 }
 
 .btn.small {
@@ -522,7 +553,7 @@ h2,
 
 /* L'attributo hidden deve prevalere anche sui layout flex e grid. */
 [hidden] { display: none !important; }
-:focus-visible { outline: 3px solid #81bfff; outline-offset: 4px; }
+:focus-visible { outline: 3px solid var(--c-blue); outline-offset: 4px; }
 button, input, select, textarea { font-family: inherit; }
 .btn, select, summary { min-height: 44px; }
 summary { cursor: pointer; }

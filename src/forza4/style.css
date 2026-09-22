@@ -71,7 +71,11 @@
 
 @media (max-width: 560px) {
   #game-board {
-    grid-template-columns: repeat(7, 40px);
-    grid-template-rows: repeat(6, 40px);
+    width: min(342px, 100%);
+    aspect-ratio: 7 / 6;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    grid-template-rows: repeat(6, minmax(0, 1fr));
+    gap: 4px;
+    padding: 8px;
   }
 }

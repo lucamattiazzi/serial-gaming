@@ -15,42 +15,45 @@
 </head>
 
 <body class="lab">
+  <a class="skip-link" href="#contenuto">Salta al laboratorio</a>
   <header class="topbar">
-    <span class="brand"><a href="../">Serial <span class="accent">Gaming</span></a> · Laboratorio</span>
-    <nav id="level-tabs">
-      <a href="#carte" data-level="carte">🃏 Carte</a>
-      <a href="#blocchi" data-level="blocchi">🧩 Blocchi</a>
-      <a href="#python" data-level="python">🐍 Python</a>
-    </nav>
+    <a class="brand" href="../" aria-label="Serial Gaming, home"><img src="../assets/bot.svg" width="36" height="38" alt=""> serial<span>gaming</span>.</a>
+    <span class="studio-label">Il mio laboratorio</span>
+    <nav aria-label="Navigazione principale"><a href="../">← Giochi</a><a href="../#spiegazione">Come funziona</a></nav>
   </header>
 
-  <main id="contenuto">
-  <header class="lab-heading">
-    <h1>Crea il tuo bot.</h1>
-    <p>Scegli le istruzioni e prova come gioca.</p>
-  </header>
-  <div class="action-bar">
-    <label for="bot-name">Il tuo bot si chiama</label>
-    <input id="bot-name" class="bot-name-input" type="text" maxlength="24"
-      placeholder="Es. Capitan Biscotto" aria-label="Nome del bot">
-    <span class="spacer"></span>
-    <button id="try-button" class="btn primary">▶ Prova il bot</button>
-    <a href="#pico" class="pico-shortcut">Carica sul Pico</a>
-  </div>
-  <div class="toolbar" id="game-toolbar">
-    <label>Gioco:
-      <select id="lab-game" aria-label="Gioco">
-        <option value="forza4">Forza 4</option>
-        <option value="tictactoe" selected>Tris</option>
-        <option value="morra">Morra cinese</option>
-        <option value="navale">Battaglia navale</option>
-        <option value="arena">Arena dei Mostri</option>
-        <option value="othello">Othello</option>
-        <option value="chess">Scacchi</option>
-      </select>
-    </label>
-  </div>
+  <main id="contenuto" tabindex="-1">
+    <header class="lab-heading">
+      <div><span class="lab-eyebrow">LE TUE IDEE PRENDONO VITA</span><h1>Crea il tuo bot.</h1></div>
+      <p>Un’istruzione, una prova, una nuova idea.</p>
+      <a href="#stage-panel" class="preview-shortcut">Vai alla prova ↓</a>
+    </header>
+    <div class="project-bar">
+      <div class="toolbar" id="game-toolbar">
+        <label for="lab-game">Il tuo gioco</label>
+        <select id="lab-game" aria-label="Gioco">
+          <option value="tictactoe" selected>Tris</option>
+          <option value="forza4">Forza 4</option>
+          <option value="morra">Morra cinese</option>
+          <option value="navale">Battaglia navale</option>
+          <option value="arena">Arena dei Mostri</option>
+          <option value="othello">Othello</option>
+          <option value="chess">Scacchi</option>
+        </select>
+      </div>
+      <div class="bot-name-field"><label for="bot-name">Il tuo bot si chiama</label>
+        <input id="bot-name" class="bot-name-input" type="text" maxlength="24" placeholder="Es. Capitan Biscotto" aria-label="Nome del bot">
+      </div>
+      <p id="save-status" role="status">Le modifiche restano in questo browser.</p>
+    </div>
 
+    <div class="studio-layout">
+    <div class="build-panel">
+      <nav id="level-tabs" aria-label="Come costruire il bot">
+        <a href="#carte" data-level="carte"><span aria-hidden="true">▤</span> Carte <small>Comincia qui</small></a>
+        <a href="#blocchi" data-level="blocchi"><span aria-hidden="true">🧩</span> Blocchi</a>
+        <a href="#python" data-level="python"><span aria-hidden="true">〈 〉</span> Python</a>
+      </nav>
   <!-- ── LIVELLO BLOCCHI ────────────────────────────────────── -->
   <section id="level-blocchi" class="level" hidden>
     <p class="intro">Incastra le istruzioni dall’alto verso il basso, poi premi «Prova il bot».</p>
@@ -83,17 +86,19 @@
 
   <!-- ── LIVELLO CARTE ──────────────────────────────────────── -->
   <section id="level-carte" class="level">
-    <p class="intro">Il bot legge dall’alto. <strong>La prima carta che può usare decide la mossa.</strong></p>
     <div class="cards-wrap">
-      <div class="cards-col">
-        <h3>Le tue istruzioni <small>Usa le frecce per cambiarne l’ordine.</small></h3>
-        <ol id="cards-deck"></ol>
-      </div>
-      <details class="cards-col" id="add-cards">
-        <summary>Aggiungi una carta</summary>
-        <p>Premi una carta per metterla in fondo alle tue istruzioni.</p>
+      <details class="cards-col" id="add-cards" open>
+        <summary><span class="panel-step">1</span> Aggiungi una carta</summary>
+        <p>Premi + per aggiungere un’istruzione.</p>
         <div id="cards-available"></div>
       </details>
+      <div class="cards-col deck-workspace">
+        <h2><span class="panel-step">2</span> Le tue istruzioni</h2>
+        <p class="deck-hint">Il bot legge dall’alto. La prima carta che può usare decide la mossa.</p>
+        <div class="start-block"><span aria-hidden="true">⚑</span> Quando tocca al mio bot</div>
+        <ol id="cards-deck" aria-label="Istruzioni del bot, in ordine"></ol>
+        <p class="reorder-hint">↑ ↓ Cambia l’ordine e scopri cosa succede!</p>
+      </div>
     </div>
     <div class="cards-actions">
       <button id="cards-to-blocks" class="btn">🧩 Trasforma il mazzo in blocchi</button>
@@ -108,12 +113,30 @@
   </section>
 
 
-  <p id="save-status" role="status">Le modifiche restano in questo browser.</p>
-  <pre id="log" role="log" aria-label="Risultati della prova e messaggi" hidden></pre>
-  <div id="test-frame"></div>
-  <section class="hardware-panel" id="pico" aria-labelledby="pico-heading">
-    <h2 id="pico-heading">Carica sul Pico</h2>
-    <p>Collega la scheda con il cavo USB, poi premi «Connetti» e «Carica sul Pico».</p>
+    </div>
+    <aside id="stage-panel" aria-labelledby="stage-heading">
+      <div class="stage-toolbar"><h2 id="stage-heading"><span class="panel-step">3</span> Prova il bot</h2>
+        <button id="try-button" class="btn primary">▶ Prova il bot</button>
+      </div>
+      <div class="stage-caption"><strong id="stage-game">Tris</strong><span>Il tuo bot · Computer</span></div>
+      <div id="stage-placeholder">
+        <div class="stage-mascot" aria-hidden="true"><span class="bot-antenna"></span><div class="bot-face"><i></i><i></i><span></span></div></div>
+        <h3>Pronto a giocare!</h3>
+        <p>Le istruzioni ci sono.<br>Premi il pulsante verde e guarda cosa fa il tuo bot.</p>
+        <span class="stage-arrow" aria-hidden="true">↗</span>
+      </div>
+      <div id="test-frame"></div>
+      <p id="stage-status" role="status">La prima prova può richiedere un momento. Serve internet.</p>
+      <a id="play-yourself" href="../tictactoe/">Prima voglio giocare io →</a>
+      <details class="test-history"><summary>Cosa è successo?</summary><pre id="log" role="log" aria-label="Risultati della prova e messaggi" hidden></pre></details>
+      <div class="experiment-tip"><span aria-hidden="true">✦</span><p><strong>E se il bot perde?</strong> Cambia una carta e riprova. È così che nascono le strategie!</p></div>
+    </aside>
+    </div>
+
+    <div class="lab-bottom"><span>Il tuo prossimo passo? Incastra i blocchi e scopri il codice.</span><a href="#pico" class="pico-shortcut">Carica sul Pico</a></div>
+    <details class="hardware-panel" id="pico">
+      <summary>Hai una scheda? Collega un Pico</summary>
+      <p>Collega la scheda con il cavo USB, poi premi «Connetti» e «Carica sul Pico».</p>
     <div class="hardware-actions">
       <button id="connect-button" class="btn connect">🔌 Connetti RP2040</button>
       <span class="conn-status" id="conn-status">non connesso</span>
@@ -121,9 +144,7 @@
     </div>
     <div class="pico-links"><a href="../torneo/">Sfida con due Pico →</a><a href="../remote/">Sfida a distanza →</a></div>
     <p id="serial-help" hidden>Questo browser non supporta il collegamento USB. Per il Pico usa Chrome o Edge su computer.</p>
-  </section>
-
-
+    </details>
   </main>
 
   <script src="../picoserial.js"></script>

@@ -13,14 +13,14 @@ test('il codice Python è evidenziato, modificabile e salvato', async ({ page })
   await expect(page.locator('#code')).toHaveValue('def rispondi(state):\n    return {"move": 4}')
 })
 
-test('il Pico è visibile senza aprire un pannello e riceve il bot corrente', async ({ page }) => {
+test('il collegamento Pico si apre dal comando e riceve il bot corrente', async ({ page }) => {
   await page.goto('/editor/?game=forza4#python')
   await page.evaluate(() => {
     PicoSerial.prototype.connect = async function () { this.isConnected = true }
     PicoSerial.prototype.uploadFiles = async function (files) { window.uploadedFiles = files }
     PicoSerial.prototype.disconnect = async function () { this.isConnected = false }
   })
-  await expect(page.locator('#connect-button')).toBeVisible()
+  await expect(page.locator('#connect-button')).toBeHidden()
   await page.locator('[data-editor-for="code"] .cm-content').fill('def rispondi(state):\n    return {"move": 2}')
   await page.locator('#bot-name').fill('Fulmine')
   await page.getByRole('link', { name: 'Carica sul Pico', exact: true }).click()
@@ -36,6 +36,7 @@ test('il Pico è visibile senza aprire un pannello e riceve il bot corrente', as
 })
 
 test('il tema scuro è comune a home, giochi e laboratorio', async ({ page }) => {
+  await page.emulateMedia({ colorScheme: 'dark' })
   for (const path of ['/', '/editor/', '/tictactoe/']) {
     await page.goto(path)
     expect(await page.evaluate(() => getComputedStyle(document.documentElement).colorScheme)).toBe('dark')

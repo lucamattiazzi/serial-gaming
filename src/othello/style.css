@@ -122,8 +122,10 @@
 
 @media (max-width: 560px) {
   #game-board {
-    grid-template-columns: repeat(8, 38px);
-    grid-template-rows: repeat(8, 38px);
+    width: min(332px, 100%);
+    aspect-ratio: 1;
+    grid-template-columns: repeat(8, minmax(0, 1fr));
+    grid-template-rows: repeat(8, minmax(0, 1fr));
     gap: 2px;
   }
 }

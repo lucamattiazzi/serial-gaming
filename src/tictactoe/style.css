@@ -29,7 +29,7 @@
 }
 
 #game-board.idle {
-  opacity: 0.55;
+  opacity: 0.85;
 }
 
 .cell {
@@ -44,6 +44,7 @@
   cursor: default;
   user-select: none;
   transition: background 0.15s, border-color 0.15s, transform 0.1s;
+  box-shadow: var(--shadow);
 }
 
 #game-board.human-turn .cell:empty {
@@ -57,12 +58,12 @@
 
 .cell.mark-x {
   color: var(--x-color);
-  background: transparent;
+  background: color-mix(in srgb, var(--x-color) 10%, var(--bg-card));
 }
 
 .cell.mark-o {
   color: var(--o-color);
-  background: transparent;
+  background: color-mix(in srgb, var(--o-color) 10%, var(--bg-card));
 }
 
 .cell.pop {

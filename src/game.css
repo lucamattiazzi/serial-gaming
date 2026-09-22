@@ -15,6 +15,10 @@
   align-items: center;
   gap: 1rem;
   margin-bottom: 1.5rem;
+  padding: 14px 18px;
+  background: var(--header);
+  color: #fff;
+  border-radius: 16px;
 }
 
 .game-page header h1 {
@@ -27,16 +31,17 @@
 .game-page .back {
   justify-self: start;
   font-size: 0.95rem;
-  color: var(--text-dim);
+  color: #fff;
 }
 
 .game-page .back:hover {
-  color: var(--accent);
+  color: #ffcf70;
 }
 
 .game-page .api-link {
   justify-self: end;
   font-size: 0.95rem;
+  color: #fff;
 }
 
 /* ── Setup giocatori ─────────────────────────────────────── */
@@ -66,6 +71,7 @@
   flex-direction: column;
   gap: 0.6rem;
   transition: border-color 0.2s, box-shadow 0.2s;
+  box-shadow: var(--shadow);
 }
 
 .player-card.active-turn {
@@ -151,6 +157,10 @@
 .actions {
   margin-bottom: 1.25rem;
 }
+
+.actions .btn.primary { background: var(--run); border-color: var(--run); color: #fff; box-shadow: 0 3px 0 #15592f; }
+.actions .btn.primary:hover:not(:disabled) { background: var(--run-hover); }
+.game-page header :focus-visible { outline-color: #ffcf70; }
 
 /* ── Sfida al meglio di 5 ────────────────────────────────── */
 .series-row {
@@ -249,7 +259,7 @@
 }
 
 .external-match {
-  padding-top: 0.75rem;
+  padding: 12px 8px;
 }
 
 /* ── Icona giocosa nel titolo della pagina ───────────────── */
