@@ -11,34 +11,19 @@ function GamesView() {
   return <>
     <section className="welcome" aria-labelledby="welcome-title">
       <div className="welcome-copy">
-        <span className="eyebrow">IL LABORATORIO DELLE TUE IDEE</span>
-        <h1 id="welcome-title">Si gioca.<br />E il bot lo inventi <em>tu!</em></h1>
-        <p>Scegli un gioco, unisci le istruzioni e guarda il tuo bot in azione. Ogni tentativo è una nuova idea.</p>
-        <a className="btn primary" href="editor/?game=tictactoe#carte"><span aria-hidden="true">＋</span> Crea il tuo primo bot</a>
-        <span className="welcome-note">Si comincia dal Tris. Basta la tua curiosità.</span>
+        <h1 id="welcome-title">Scegli un gioco.</h1>
+        <p>Gioca tu, poi insegna al tuo bot.</p>
       </div>
-      <div className="welcome-art" aria-hidden="true">
-        <span className="bot-speech">Mi insegni a giocare?</span>
-        <div className="hero-bot"><BotDrawing /></div>
-        <div className="idea-blocks"><span>⚑ Quando tocca a me</span><span>Se posso vincere…</span><span>faccio la mia mossa!</span></div>
-        <span className="art-spark spark-one">✦</span><span className="art-spark spark-two">✧</span>
-      </div>
+      <a className="btn primary" href="editor/?game=tictactoe#carte">Crea il tuo primo bot</a>
     </section>
-    <ol className="discovery-path" aria-label="Il tuo percorso">
-      <li><span className="step-number">1</span><span><strong>Gioca</strong><small>Scopri le regole</small></span></li>
-      <li><span className="step-number">2</span><span><strong>Costruisci</strong><small>Insegna al tuo bot</small></span></li>
-      <li><span className="step-number">3</span><span><strong>Prova e riprova</strong><small>Le idee crescono così!</small></span></li>
-    </ol>
     <section className="game-library" aria-label="Giochi">
-      <div className="library-heading"><div><h2>Scegli un gioco.</h2><p>Puoi giocare tu o inventare un bot che gioca per te.</p></div><span className="library-count">{games.length} giochi da esplorare</span></div>
       <div className="game-grid">
         {games.map(g => <article className={`activity-card game-${g.id}`} key={g.id}>
-          <div className="game-art"><GameArtwork game={g} /><span className="game-level">{g.id === 'tictactoe' ? '★ Parti da qui' : g.level === 'inizio' ? 'Per cominciare' : 'Una sfida in più'}</span></div>
-          <div className="activity-content"><h3>{g.title}</h3>
+          <div className="game-art"><GameArtwork game={g} /></div>
+          <div className="activity-content"><h2>{g.title}</h2>
             <p>{g.blurb}</p>
             <div className="activity-links">
               <a href={g.href} aria-label={`Gioca a ${g.title}`}><span aria-hidden="true">▶</span> Gioca</a>
-              <a href={`editor/?game=${g.id}#carte`} aria-label={`Crea un bot per ${g.title}`}>Crea un bot <span aria-hidden="true">→</span></a>
             </div>
           </div>
         </article>)}
@@ -75,9 +60,9 @@ export default function App() {
   return <div className="landing">
     <a className="skip-link" href="#contenuto">Salta al contenuto</a>
     <header className="site-header"><a className="site-brand" href="#giochi" aria-label="Serial Gaming, home"><span className="brand-bot"><BotDrawing /></span>serial<span>gaming</span><span className="brand-dot">.</span></a>
-      <nav aria-label="Navigazione principale"><a href="#giochi" aria-current={view === 'giochi' ? 'page' : undefined}>Giochi</a><a href="editor/">Laboratorio</a><a href="remote/">Sfida online</a><a href="#spiegazione" aria-current={view === 'spiegazione' ? 'page' : undefined}>Come funziona</a></nav>
+      <nav aria-label="Navigazione principale"><a href="#giochi" aria-current={view === 'giochi' ? 'page' : undefined}>Giochi</a><a href="editor/">Laboratorio</a><a href="#spiegazione" aria-current={view === 'spiegazione' ? 'page' : undefined}>Come funziona</a></nav>
     </header>
     <main id="contenuto" tabIndex="-1">{view === 'giochi' ? <GamesView /> : <SpiegazioneView />}</main>
-    <footer className="site-footer"><a href="lezioni/">Guida per docenti</a>{!SITE_CONFIG.hiddenGames.includes('torneo') && <a href="torneo/">Torneo con i Pico</a>}<span className="site-credit">Un progetto di <a href="https://grokked.it">grokked.it</a></span></footer>
+    <footer className="site-footer"><a href="lezioni/">Guida per docenti</a><a href="remote/">Sfida online</a>{!SITE_CONFIG.hiddenGames.includes('torneo') && <a href="torneo/">Torneo con i Pico</a>}<span className="site-credit">Un progetto di <a href="https://grokked.it">grokked.it</a></span></footer>
   </div>
 }

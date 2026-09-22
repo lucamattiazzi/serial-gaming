@@ -39,6 +39,7 @@ for (const game of ['forza4', 'morra', 'navale', 'arena', 'othello']) {
 test('le strategie dei blocchi restano dopo il ricaricamento', async ({ page }) => {
   await page.goto('/editor/?game=tictactoe#carte')
   await page.getByRole('button', { name: /Rimuovi:.*Vinci se puoi/ }).click()
+  await page.locator('.cards-code summary').click()
   await page.getByRole('button', { name: /Trasforma il mazzo in blocchi/ }).click()
   await expect(page.locator('#level-blocchi')).toBeVisible()
   const code = await page.locator('#generated').textContent()

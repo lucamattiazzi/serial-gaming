@@ -115,11 +115,13 @@ test('il Python delle carte usa cure e jolly senza invalidare i bot precedenti',
 
 test('le nuove carte si trasformano in blocchi Python utilizzabili', async ({ page }) => {
   await page.goto('/editor/?game=arena#carte')
+  await page.locator('#add-cards summary').click()
   await expect(page.locator('#cards-available')).toBeVisible()
   await page.getByRole('button', { name: /Cura se hai poca vita/ }).click()
   await page.getByRole('button', { name: /Sposta su:.*Cura se hai poca vita/ }).click()
   await page.getByRole('button', { name: /Rimuovi:.*attacco più efficace/ }).click()
   await page.getByRole('button', { name: /Sempre il colpo jolly/ }).click()
+  await page.locator('.cards-code summary').click()
   await page.getByRole('button', { name: /Trasforma il mazzo in blocchi/ }).click()
   await expect(page.locator('#generated')).toContainText('return curati()')
   await expect(page.locator('#generated')).toContainText('return attacco_jolly()')

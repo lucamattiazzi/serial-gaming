@@ -6,11 +6,16 @@ test('la home mostra giochi illustrati e un primo invito al laboratorio', async 
   await expect(page.locator('.activity-card')).toHaveCount(6)
   await expect(page.locator('.welcome .primary')).toHaveCount(1)
   await expect(page.locator('.activity-card svg')).toHaveCount(6)
+  await expect(page.locator('.discovery-path, .welcome-art, .library-count')).toHaveCount(0)
+  await expect(page.locator('.activity-card a')).toHaveCount(6)
 })
 
-test('la tavolozza delle carte è aperta e il Pico resta raggiungibile', async ({ page }) => {
+test('le carte aggiuntive si aprono su richiesta e il Pico resta raggiungibile', async ({ page }) => {
   await page.goto('/editor/?game=tictactoe#carte')
   await expect(page.locator('#cards-deck')).toBeVisible()
+  await expect(page.locator('#cards-available')).toBeHidden()
+  await expect(page.locator('#cards-to-blocks')).toBeHidden()
+  await page.locator('#add-cards summary').click()
   await expect(page.locator('#cards-available')).toBeVisible()
   const count = await page.locator('#cards-deck > li').count()
   await page.locator('#cards-available button:not(:disabled)').first().click()

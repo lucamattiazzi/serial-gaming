@@ -412,6 +412,7 @@ function currentBot() {
 // ── Log ──────────────────────────────────────────────────────
 function log(message) {
   logEl.hidden = false
+  logEl.closest('details').hidden = false
   if (!testing) logEl.closest('details').open = true
   logEl.textContent += message + '\n'
   logEl.scrollTop = logEl.scrollHeight
@@ -428,11 +429,12 @@ function syncStage() {
     stagePlaceholder.hidden = false
     stagePlaceholder.querySelector('h3').textContent = 'Pronto a giocare!'
     stagePanel.dataset.state = 'ready'
-    stageStatus.textContent = 'La prima prova può richiedere un momento. Serve internet.'
+    stageStatus.textContent = ''
   }
   stagePanel.dataset.game = gameId
   document.getElementById('stage-game').textContent = LAB_GAMES[gameId]?.name || gameId
   document.getElementById('play-yourself').href = GAME_PATH[gameId]
+  document.getElementById('computer-strategy').textContent = computerAiDescription(TEST_CPU[gameId], gameId)
 }
 
 function testStatus(state, message) {
@@ -460,7 +462,7 @@ tryButton.addEventListener('click', async () => {
   templateSelect.disabled = true
   testFrame.replaceChildren()
   stagePlaceholder.hidden = false
-  testStatus('loading', 'Preparo il tuo bot… La prima volta ci vuole un momento.')
+  testStatus('loading', 'Preparo il tuo bot… La prima prova richiede internet e può impiegare un momento.')
   logEl.textContent = ''
   log(`Preparo l'emulatore e avvio una partita di prova (${testGameId})…`)
 

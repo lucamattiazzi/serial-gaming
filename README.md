@@ -29,10 +29,14 @@ previsione, cambiare una sola regola, osservare il risultato e raccontarlo.
 La guida in `/lezioni/` include una scaletta breve e un percorso più lungo.
 
 La home propone giochi illustrati per cominciare e sfide successive. Il
-laboratorio affianca tavolozza delle carte, istruzioni ordinate e partita di
-prova. Il pulsante verde avvia il bot e le carte si illuminano quando decidono
+laboratorio affianca istruzioni ordinate e partita di prova. Carte aggiuntive,
+conversione in blocchi e codice si aprono su richiesta. Il pulsante verde avvia
+il bot e le carte si illuminano quando decidono
 una mossa; il risultato resta accanto al tabellone. Su schermi piccoli i pannelli
 si impilano e «Vai alla prova» porta direttamente al pulsante di avvio.
+Quando si sceglie il computer, una breve spiegazione descrive la sua AI e la
+strategia del livello scelto: mosse casuali, ricerca delle mosse successive o
+regole specifiche del gioco. Nel laboratorio è sotto «Come gioca il computer?».
 Nel laboratorio,
 `?game=tictactoe#carte` apre direttamente il gioco e il livello desiderati.
 Carte, codice Python e blocchi vengono salvati per gioco nel browser locale.

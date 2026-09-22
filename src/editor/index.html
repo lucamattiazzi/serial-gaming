@@ -24,8 +24,7 @@
 
   <main id="contenuto" tabindex="-1">
     <header class="lab-heading">
-      <div><span class="lab-eyebrow">LE TUE IDEE PRENDONO VITA</span><h1>Crea il tuo bot.</h1></div>
-      <p>Un’istruzione, una prova, una nuova idea.</p>
+      <h1>Crea il tuo bot.</h1>
       <a href="#stage-panel" class="preview-shortcut">Vai alla prova ↓</a>
     </header>
     <div class="project-bar">
@@ -44,13 +43,12 @@
       <div class="bot-name-field"><label for="bot-name">Il tuo bot si chiama</label>
         <input id="bot-name" class="bot-name-input" type="text" maxlength="24" placeholder="Es. Capitan Biscotto" aria-label="Nome del bot">
       </div>
-      <p id="save-status" role="status">Le modifiche restano in questo browser.</p>
     </div>
 
     <div class="studio-layout">
     <div class="build-panel">
       <nav id="level-tabs" aria-label="Come costruire il bot">
-        <a href="#carte" data-level="carte"><span aria-hidden="true">▤</span> Carte <small>Comincia qui</small></a>
+        <a href="#carte" data-level="carte"><span aria-hidden="true">▤</span> Carte</a>
         <a href="#blocchi" data-level="blocchi"><span aria-hidden="true">🧩</span> Blocchi</a>
         <a href="#python" data-level="python"><span aria-hidden="true">〈 〉</span> Python</a>
       </nav>
@@ -87,24 +85,21 @@
   <!-- ── LIVELLO CARTE ──────────────────────────────────────── -->
   <section id="level-carte" class="level">
     <div class="cards-wrap">
-      <details class="cards-col" id="add-cards" open>
-        <summary><span class="panel-step">1</span> Aggiungi una carta</summary>
-        <p>Premi + per aggiungere un’istruzione.</p>
+      <div class="cards-col deck-workspace">
+        <h2>Le tue istruzioni</h2>
+        <p class="deck-hint">Il bot legge dall’alto. La prima carta che può usare decide la mossa.</p>
+        <ol id="cards-deck" aria-label="Istruzioni del bot, in ordine"></ol>
+      </div>
+      <details class="cards-col" id="add-cards">
+        <summary>Aggiungi una carta</summary>
         <div id="cards-available"></div>
       </details>
-      <div class="cards-col deck-workspace">
-        <h2><span class="panel-step">2</span> Le tue istruzioni</h2>
-        <p class="deck-hint">Il bot legge dall’alto. La prima carta che può usare decide la mossa.</p>
-        <div class="start-block"><span aria-hidden="true">⚑</span> Quando tocca al mio bot</div>
-        <ol id="cards-deck" aria-label="Istruzioni del bot, in ordine"></ol>
-        <p class="reorder-hint">↑ ↓ Cambia l’ordine e scopri cosa succede!</p>
-      </div>
-    </div>
-    <div class="cards-actions">
-      <button id="cards-to-blocks" class="btn">🧩 Trasforma il mazzo in blocchi</button>
     </div>
     <details class="cards-code">
-      <summary>Guarda il codice delle carte</summary>
+      <summary>Blocchi e codice</summary>
+      <div class="cards-actions">
+        <button id="cards-to-blocks" class="btn">🧩 Trasforma il mazzo in blocchi</button>
+      </div>
       <h3>Codice MicroPython
         <small>(modificalo a piacere — attenzione: se cambi le carte viene riscritto)</small>
       </h3>
@@ -115,25 +110,23 @@
 
     </div>
     <aside id="stage-panel" aria-labelledby="stage-heading">
-      <div class="stage-toolbar"><h2 id="stage-heading"><span class="panel-step">3</span> Prova il bot</h2>
+      <div class="stage-toolbar"><h2 id="stage-heading">La partita</h2>
         <button id="try-button" class="btn primary">▶ Prova il bot</button>
       </div>
-      <div class="stage-caption"><strong id="stage-game">Tris</strong><span>Il tuo bot · Computer</span></div>
+      <div class="stage-caption"><strong id="stage-game">Tris</strong><span>Il tuo bot · AI del computer</span></div>
       <div id="stage-placeholder">
-        <div class="stage-mascot" aria-hidden="true"><span class="bot-antenna"></span><div class="bot-face"><i></i><i></i><span></span></div></div>
         <h3>Pronto a giocare!</h3>
-        <p>Le istruzioni ci sono.<br>Premi il pulsante verde e guarda cosa fa il tuo bot.</p>
-        <span class="stage-arrow" aria-hidden="true">↗</span>
+        <p>Premi «Prova il bot» per cominciare.</p>
       </div>
       <div id="test-frame"></div>
-      <p id="stage-status" role="status">La prima prova può richiedere un momento. Serve internet.</p>
+      <p id="stage-status" role="status"></p>
+      <details class="computer-info"><summary>Come gioca il computer?</summary><p id="computer-strategy"></p></details>
       <a id="play-yourself" href="../tictactoe/">Prima voglio giocare io →</a>
-      <details class="test-history"><summary>Cosa è successo?</summary><pre id="log" role="log" aria-label="Risultati della prova e messaggi" hidden></pre></details>
-      <div class="experiment-tip"><span aria-hidden="true">✦</span><p><strong>E se il bot perde?</strong> Cambia una carta e riprova. È così che nascono le strategie!</p></div>
+      <details class="test-history" hidden><summary>Cosa è successo?</summary><pre id="log" role="log" aria-label="Risultati della prova e messaggi" hidden></pre></details>
     </aside>
     </div>
 
-    <div class="lab-bottom"><span>Il tuo prossimo passo? Incastra i blocchi e scopri il codice.</span><a href="#pico" class="pico-shortcut">Carica sul Pico</a></div>
+    <div class="lab-bottom"><p id="save-status" role="status">Le modifiche restano in questo browser.</p><a href="#pico" class="pico-shortcut">Carica sul Pico</a></div>
     <details class="hardware-panel" id="pico">
       <summary>Hai una scheda? Collega un Pico</summary>
       <p>Collega la scheda con il cavo USB, poi premi «Connetti» e «Carica sul Pico».</p>
@@ -151,6 +144,7 @@
   <script src="../router.js"></script>
   <script src="../bot-templates.js"></script>
   <script src="../emupico.js"></script>
+  <script src="../regole.js"></script>
   <script src="lab-common.js"></script>
   <script src="forza4-blocks.js"></script>
   <script src="tictactoe-blocks.js"></script>

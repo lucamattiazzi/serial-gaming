@@ -5,10 +5,9 @@ test('istruzioni e prova sono affiancate e visibili su computer', async ({ page 
   await page.goto('/editor/?game=tictactoe#carte')
   await expect(page.locator('#stage-panel')).toBeVisible()
   await expect(page.locator('#try-button')).toBeInViewport()
-  const palette = await page.locator('#add-cards').boundingBox()
   const deck = await page.locator('#cards-deck').boundingBox()
   const stage = await page.locator('#stage-panel').boundingBox()
-  expect(palette.x + palette.width).toBeLessThanOrEqual(deck.x)
+  await expect(page.locator('#cards-available')).toBeHidden()
   expect(deck.x + deck.width).toBeLessThanOrEqual(stage.x)
   expect(Math.abs(deck.y - stage.y)).toBeLessThan(240)
 })
@@ -63,6 +62,7 @@ test('il tema chiaro segue il sistema e i blocchi cambiano tema senza perdere il
 
 test('le carte già usate restano riconoscibili nella tavolozza', async ({ page }) => {
   await page.goto('/editor/')
+  await page.locator('#add-cards summary').click()
   await expect(page.locator('#cards-available button')).toHaveCount(5)
   const available = page.locator('#cards-available button:not(:disabled)')
   await expect(available).toHaveCount(1)
